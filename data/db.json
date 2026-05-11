@@ -1,0 +1,55 @@
+{
+  "config": {
+    "settlementMode": "fair_server",
+    "payoutRate": 0.9,
+    "winProbability": 0.5,
+    "settlementDelayMs": 900,
+    "designatedWallet": "I & M Bank Limited 06509279966150 / Channel ID 8005",
+    "mockPayments": true
+  },
+  "users": [
+    {
+      "id": "usr_32922542ca4d3c8c",
+      "identifier": "demo:Demo Trader",
+      "name": "Demo Trader",
+      "balance": 10100,
+      "demo": true,
+      "createdAt": "2026-05-05T18:35:21.665Z"
+    }
+  ],
+  "deposits": [
+    {
+      "id": "dep_4bc1aa6c889919a2",
+      "userId": "usr_32922542ca4d3c8c",
+      "method": "mpesa",
+      "phone": "0762013805",
+      "amount": 100,
+      "status": "completed",
+      "providerReference": "stk_f4439ce918ee0ff1",
+      "wallet": "NCBA Loop 440200250861 / Channel ID 7598",
+      "createdAt": "2026-05-05T18:36:04.528Z"
+    }
+  ],
+  "withdrawals": [],
+  "trades": [],
+  "ledger": [
+    {
+      "id": "led_7db60a85177d2f5c",
+      "createdAt": "2026-05-05T18:35:21.665Z",
+      "userId": "usr_32922542ca4d3c8c",
+      "type": "demo_credit",
+      "amount": 10000,
+      "balanceAfter": 10000,
+      "reference": "initial"
+    },
+    {
+      "id": "led_6aef62eadc24b940",
+      "createdAt": "2026-05-05T18:36:04.528Z",
+      "userId": "usr_32922542ca4d3c8c",
+      "type": "deposit",
+      "amount": 100,
+      "balanceAfter": 10100,
+      "reference": "dep_4bc1aa6c889919a2"
+    }
+  ]
+}

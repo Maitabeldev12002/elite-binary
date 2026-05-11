@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Elite Binary — Professional Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;font-size:16px;scroll-behavior:smooth}
+body{min-height:100%;font-family:'Lexend',sans-serif;background:#080b12;color:#e2e8f8;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font-family:inherit;outline:none}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+:root{
+  --bg:#080b12;--bg1:#0c1018;--bg2:#101520;--bg3:#141c28;
+  --card:#111720;--card2:#16202e;--border:#1c2a40;--border2:#243450;
+  --blue:#1b8ef8;--blue-d:#1478d4;--blue-dim:rgba(27,142,248,.12);--blue-glow:rgba(27,142,248,.25);
+  --green:#10b981;--green-dim:rgba(16,185,129,.12);
+  --red:#f43f5e;--amber:#f59e0b;--purple:#8b5cf6;
+  --text:#e2e8f8;--text2:#7a8fb0;--text3:#3a506a;
+}
+/* ── NAVBAR ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;padding:0 clamp(16px,5vw,48px);background:rgba(8,11,18,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(28,42,64,.6)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:800;letter-spacing:-.5px}
+.nav-logo-dot{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--blue),#0a5fc8);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:#fff;box-shadow:0 0 16px var(--blue-glow)}
+.nav-logo-text{color:var(--text)}.nav-logo-accent{color:var(--blue)}
+.nav-links{display:flex;align-items:center;gap:28px;margin-left:auto}
+.nav-link{font-size:.82rem;font-weight:600;color:var(--text3);transition:color .2s;letter-spacing:.02em;background:none;border:none;cursor:pointer;padding:0}
+.nav-link:hover{color:var(--text)}
+.nav-cta{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:.82rem;font-weight:700;cursor:pointer;letter-spacing:.02em;transition:all .2s;box-shadow:0 4px 16px var(--blue-glow)}
+.nav-cta:hover{background:var(--blue-d);transform:translateY(-1px)}.nav-cta:active{transform:scale(.98)}
+.nav-mobile-cta{display:none}
+
+/* ── MODAL ── */
+.modal{position:fixed;inset:0;background:rgba(8,11,18,.92);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal.open{display:flex}
+.modal-content{background:var(--card);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:430px;padding:28px 24px 24px;position:relative;max-height:92vh;overflow-y:auto}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text3);font-size:1.4rem;cursor:pointer;line-height:1;transition:color .15s}
+.modal-close:hover{color:var(--text)}
+.modal-title{font-size:1.3rem;font-weight:800;margin-bottom:6px;text-align:center;color:var(--text)}
+.modal-subtitle{font-size:.82rem;color:var(--text2);text-align:center;margin-bottom:22px;line-height:1.5}
+/* TAB SWITCHER */
+.auth-tabs{display:flex;background:var(--bg2);border-radius:10px;padding:3px;margin-bottom:18px}
+.auth-tab{flex:1;padding:9px;text-align:center;font-size:.82rem;font-weight:700;color:var(--text3);cursor:pointer;border-radius:8px;transition:.2s;border:none;background:none}
+.auth-tab.on{background:var(--blue);color:#fff}
+/* FORM */
+.auth-form{display:flex;flex-direction:column;gap:0}
+.fg{margin-bottom:12px}
+.fl{font-size:.67rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.fl .hint{font-size:.62rem;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0}
+.fi{width:100%;background:var(--bg2);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:11px 13px;font-size:.88rem;transition:.2s;font-family:'Lexend',sans-serif}
+.fi:focus{border-color:var(--blue);outline:none}.fi.err{border-color:var(--red)!important}
+.em{font-size:.67rem;color:var(--red);margin-top:3px;display:none}
+.pww{position:relative}
+.pwe{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);font-size:.85rem;user-select:none;transition:color .15s}
+.pwe:hover{color:var(--text2)}
+/* STRENGTH */
+.sw{margin-top:5px;display:none}
+.sbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sfill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0%}
+.stxt{font-size:.64rem;font-weight:700;margin-top:3px}
+/* TERMS */
+.terms{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;margin-bottom:14px;cursor:pointer;transition:.15s}
+.terms.on{border-color:rgba(27,142,248,.45);background:var(--blue-dim)}
+.tchk{width:18px;height:18px;accent-color:var(--blue);cursor:pointer;flex-shrink:0;margin-top:1px}
+.ttxt{font-size:.72rem;color:var(--text2);line-height:1.55}
+.ttxt a{color:var(--blue);font-weight:600}
+/* SUBMIT */
+.auth-submit{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:10px;transition:all .2s;letter-spacing:.01em}
+.auth-submit:hover{background:var(--blue-d);transform:translateY(-1px)}.auth-submit:active{transform:scale(.98)}.auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* MESSAGES */
+.auth-msg{padding:10px 12px;border-radius:8px;font-size:.77rem;font-weight:600;margin-bottom:12px;display:none;line-height:1.4}
+.auth-msg.err{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--red);display:block}
+.auth-msg.ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);display:block}
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px clamp(16px,5vw,64px) 60px;text-align:center;position:relative;overflow:hidden}
+.hero-bg-glow{position:absolute;top:-10%;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse,rgba(27,142,248,.13) 0%,transparent 70%);pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(27,142,248,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(27,142,248,.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--blue-dim);border:1px solid rgba(27,142,248,.3);border-radius:20px;padding:6px 16px;font-size:.72rem;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px;animation:fadeUp .6s ease both}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-title{font-size:clamp(2.4rem,7vw,4.8rem);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;animation:fadeUp .6s .12s ease both}
+.hero-title .accent{background:linear-gradient(135deg,var(--blue),#38b3ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(.92rem,2vw,1.1rem);color:var(--text2);line-height:1.8;max-width:600px;margin:0 auto 40px;font-weight:400;animation:fadeUp .6s .22s ease both}
+.hero-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;animation:fadeUp .6s .32s ease both}
+.btn-hero-primary{background:linear-gradient(135deg,var(--blue),var(--blue-d));color:#fff;border:none;border-radius:12px;padding:16px 32px;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 28px var(--blue-glow);transition:all .2s}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 10px 36px var(--blue-glow)}.btn-hero-primary:active{transform:scale(.98)}
+.btn-hero-secondary{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--border2);border-radius:12px;padding:16px 32px;font-size:1rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);transition:all .2s}
+.btn-hero-secondary:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+
+/* ── TICKER ── */
+.ticker-strip{background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;position:relative}
+.ticker-strip::before,.ticker-strip::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2}
+.ticker-strip::before{left:0;background:linear-gradient(90deg,var(--bg1),transparent)}
+.ticker-strip::after{right:0;background:linear-gradient(-90deg,var(--bg1),transparent)}
+.ticker-inner{display:flex;gap:8px;animation:ticker-scroll 28s linear infinite;width:max-content}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.t-card{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:120px}
+.t-sym{font-size:.6rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.t-price{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.t-chg{font-size:.68rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+.t-chg.up{color:var(--green)}.t-chg.dn{color:var(--red)}
+
+/* ── STATS ── */
+.stats-section{padding:clamp(48px,8vw,96px) clamp(16px,5vw,64px);display:flex;flex-wrap:wrap;justify-content:center;gap:16px}
+.stat-block{flex:1 1 180px;max-width:240px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;transition:border-color .2s,transform .2s}
+.stat-block:hover{border-color:var(--border2);transform:translateY(-3px)}
+.stat-num{font-size:2.4rem;font-weight:900;color:var(--blue);font-family:'JetBrains Mono',monospace;margin-bottom:6px}
+.stat-lbl{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+
+/* ── FEATURES ── */
+.features-section{padding:0 clamp(16px,5vw,64px) clamp(48px,8vw,96px)}
+.features-header{text-align:center;margin-bottom:48px}
+.section-label{font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.15em;display:block;margin-bottom:14px}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-1px;line-height:1.15;margin-bottom:14px}
+.section-sub{font-size:.95rem;color:var(--text2);line-height:1.8;max-width:520px;margin:0 auto;font-weight:400}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 20px;transition:border-color .2s,transform .2s,background .2s;position:relative;overflow:hidden}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(27,142,248,.4),transparent);opacity:0;transition:opacity .2s}
+.feat-card:hover{border-color:rgba(27,142,248,.3);transform:translateY(-4px);background:var(--card2)}.feat-card:hover::before{opacity:1}
+.feat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:16px}
+.feat-icon.blue{background:var(--blue-dim);border:1px solid rgba(27,142,248,.3)}.feat-icon.green{background:var(--green-dim);border:1px solid rgba(16,185,129,.3)}.feat-icon.amber{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}.feat-icon.purple{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3)}
+.feat-title{font-size:.95rem;font-weight:800;color:var(--text);margin-bottom:8px}
+.feat-desc{font-size:.8rem;color:var(--text2);line-height:1.7;font-weight:400}
+
+/* ── CONTRACTS ── */
+.contracts-section{background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:clamp(48px,8vw,96px) clamp(16px,5vw,64px)}
+.contracts-header{text-align:center;margin-bottom:48px}
+.contracts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;max-width:1000px;margin:0 auto}
+.ct-pill{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center;cursor:default;transition:all .2s}
+.ct-pill:hover{border-color:var(--border2);background:var(--card2)}
+.ct-pill-icon{font-size:1.3rem;margin-bottom:8px}.ct-pill-name{font-size:.75rem;font-weight:700;color:var(--text2);letter-spacing:.02em}
+
+/* ── AI SECTION ── */
+.ai-section{padding:clamp(48px,8vw,96px) clamp(16px,5vw,64px);display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,64px);align-items:center}
+@media(max-width:680px){.ai-section{grid-template-columns:1fr}}
+.ai-visual{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;position:relative;overflow:hidden}
+.ai-visual-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.ai-visual-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 1.5s infinite}
+.ai-visual-title{font-size:.8rem;font-weight:800;color:var(--text)}
+.ai-visual-badge{margin-left:auto;background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(236,72,153,.15));border:1px solid rgba(139,92,246,.4);color:var(--purple);border-radius:20px;padding:3px 10px;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.signal-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(28,42,64,.6)}
+.signal-row:last-child{border-bottom:none}
+.signal-icon-sm{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.signal-icon-sm.buy{background:var(--green-dim)}.signal-icon-sm.sell{background:rgba(244,63,94,.12)}.signal-icon-sm.neutral{background:rgba(245,158,11,.12)}
+.signal-info-sm{flex:1;min-width:0}
+.signal-title-sm{font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:2px}.signal-detail-sm{font-size:.65rem;color:var(--text2)}
+.signal-pct{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:800}
+.signal-pct.high{color:var(--green)}.signal-pct.med{color:var(--amber)}.signal-pct.low{color:var(--red)}
+
+/* ── TRUST ── */
+.trust-section{background:var(--bg1);border-top:1px solid var(--border);padding:clamp(48px,8vw,96px) clamp(16px,5vw,64px)}
+.trust-header{text-align:center;margin-bottom:48px}
+.trust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;max-width:1000px;margin:0 auto}
+.trust-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 20px}
+.trust-stars{color:var(--amber);font-size:.9rem;margin-bottom:12px;letter-spacing:2px}
+.trust-quote{font-size:.85rem;color:var(--text2);line-height:1.75;font-weight:400;margin-bottom:16px;font-style:italic}
+.trust-author{display:flex;align-items:center;gap:10px}
+.trust-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
+.trust-name{font-size:.82rem;font-weight:700;color:var(--text)}.trust-loc{font-size:.7rem;color:var(--text3);font-weight:500;margin-top:1px}
+
+/* ── CTA ── */
+.cta-section{padding:clamp(64px,10vw,120px) clamp(16px,5vw,64px);text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(27,142,248,.1),transparent 70%);pointer-events:none}
+.cta-title{font-size:clamp(2rem,5vw,3.8rem);font-weight:900;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.cta-sub{font-size:.95rem;color:var(--text2);line-height:1.8;max-width:520px;margin:0 auto 36px;font-weight:400}
+.cta-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.cta-note{margin-top:16px;font-size:.75rem;color:var(--text3);font-weight:500}
+.cta-note a{color:var(--blue);cursor:pointer;font-weight:600}
+
+/* ── FOOTER ── */
+.footer{background:var(--bg1);border-top:1px solid var(--border);padding:36px clamp(16px,5vw,64px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.footer-logo{font-size:.9rem;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px}
+.footer-logo-accent{color:var(--blue)}.footer-copy{font-size:.72rem;color:var(--text3);font-weight:500}
+.footer-links{display:flex;gap:20px}
+.footer-link{font-size:.72rem;color:var(--text3);font-weight:600;transition:color .2s;cursor:pointer}.footer-link:hover{color:var(--text)}
+.risk-notice{background:rgba(244,63,94,.05);border-top:1px solid rgba(244,63,94,.2);padding:14px clamp(16px,5vw,64px);font-size:.68rem;color:var(--text3);text-align:center;line-height:1.7;font-weight:400}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.fade-up.in{opacity:1;transform:none}
+
+@media(max-width:640px){
+  .nav-links{display:none}
+  .nav-mobile-cta{display:block;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:700;cursor:pointer;margin-left:auto}
+  .hero-btns{flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto}
+  .btn-hero-primary,.btn-hero-secondary{text-align:center;padding:14px 24px}
+  .stats-section{padding:40px 16px}.stat-num{font-size:1.9rem}
+  .ai-section .ai-copy{order:-1}
+  .footer{flex-direction:column;align-items:flex-start;gap:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-dot">EB</div>
+    <span class="nav-logo-text">Elite<span class="nav-logo-accent">Binary</span></span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Features</button>
+    <button class="nav-link" onclick="document.getElementById('contracts').scrollIntoView({behavior:'smooth'})">Markets</button>
+    <button class="nav-link" onclick="document.getElementById('ai-sec').scrollIntoView({behavior:'smooth'})">AI Signals</button>
+    <button class="nav-link" onclick="document.getElementById('trust').scrollIntoView({behavior:'smooth'})">Reviews</button>
+    <button class="nav-cta" id="nav-cta-btn" onclick="showModal('login')">Login to Trade</button>
+  </div>
+  <button class="nav-mobile-cta" id="nav-mobile-btn" onclick="showModal('login')">Login</button>
+</nav>
+
+<!-- ══════════════════════════════════════
+     AUTH MODAL — persistent localStorage DB
+══════════════════════════════════════ -->
+<div id="auth-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="hideModal()">×</button>
+
+    <div class="modal-title" id="modal-title">Welcome Back</div>
+    <div class="modal-subtitle" id="modal-subtitle">Sign in to your account</div>
+
+    <!-- Tab switcher (login/register only) -->
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab on" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div class="auth-msg" id="auth-msg"></div>
+
+    <!-- ── LOGIN FORM ── -->
+    <div id="form-login">
+      <div class="auth-form">
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" id="l-email" type="email" placeholder="email@example.com" autocomplete="email">
+          <div class="em" id="l-email-e">Enter your email</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="pww">
+            <input class="fi" id="l-pw" type="password" placeholder="Your password" autocomplete="current-password">
+            <span class="pwe" onclick="togPw('l-pw',this)">👁</span>
+          </div>
+          <div class="em" id="l-pw-e">Enter your password</div>
+        </div>
+        <button class="auth-submit" id="login-btn" onclick="doLogin()">Sign In</button>
+      </div>
+    </div>
+
+    <!-- ── REGISTER FORM ── -->
+    <div id="form-register" style="display:none">
+      <div class="auth-form">
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <input class="fi" id="r-name" type="text" placeholder="John Doe" autocomplete="name">
+          <div class="em" id="r-name-e">Enter your full name</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" id="r-email" type="email" placeholder="email@example.com" autocomplete="email">
+          <div class="em" id="r-email-e">Enter a valid email</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Phone Number</label>
+          <input class="fi" id="r-phone" type="tel" placeholder="+254712345678" autocomplete="tel">
+          <div class="em" id="r-phone-e">Enter your phone number</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Referral Code <span class="hint">(optional)</span></label>
+          <input class="fi" id="r-ref" type="text" placeholder="e.g. EB-ABC123">
+        </div>
+        <div class="fg">
+          <label class="fl">Password <span class="hint">min 6 characters</span></label>
+          <div class="pww">
+            <input class="fi" id="r-pw" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="chkStr()">
+            <span class="pwe" onclick="togPw('r-pw',this)">👁</span>
+          </div>
+          <div class="sw" id="sw">
+            <div class="sbar"><div class="sfill" id="sfill"></div></div>
+            <div class="stxt" id="stxt"></div>
+          </div>
+          <div class="em" id="r-pw-e">Password must be at least 6 characters</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Confirm Password</label>
+          <div class="pww">
+            <input class="fi" id="r-cf" type="password" placeholder="Re-enter your password" autocomplete="new-password" oninput="chkCf()">
+            <span class="pwe" onclick="togPw('r-cf',this)">👁</span>
+          </div>
+          <div class="em" id="r-cf-e">Passwords do not match</div>
+        </div>
+        <label class="terms" id="terms-row" onclick="togTerms()">
+          <input type="checkbox" class="tchk" id="tchk" onclick="event.stopPropagation();updTerms()">
+          <div class="ttxt">I agree to the <a href="#" onclick="return false">Terms of Service</a> and <a href="#" onclick="return false">Privacy Policy</a>. I confirm I am 18+ and understand that trading involves significant risk.</div>
+        </label>
+        <button class="auth-submit" id="reg-btn" onclick="doRegister()">Create Account</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-glow"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-badge"><span class="hero-badge-dot"></span>Elite Binary — Professional Trading</div>
+  <h1 class="hero-title">Trade Smarter<br>with <span class="accent">Elite Binary</span></h1>
+  <p class="hero-sub">Professional binary options trading tools, live AI signals, automated bots, and all Deriv contract types — in one sleek platform. Real-time data, instant execution.</p>
+  <div class="hero-btns">
+    <button class="btn-hero-primary" onclick="showModal('login')">Login & Trade Now</button>
+    <button class="btn-hero-secondary" onclick="showModal('register')">Open Free Account</button>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-strip">
+  <div class="ticker-inner" id="ticker-inner">
+    <div class="t-card"><div class="t-sym">Vol 10 (1s)</div><div class="t-price" id="tk1">—</div><div class="t-chg up" id="tc1">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 25 (1s)</div><div class="t-price" id="tk2">—</div><div class="t-chg up" id="tc2">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 50 (1s)</div><div class="t-price" id="tk3">—</div><div class="t-chg dn" id="tc3">-0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 75 (1s)</div><div class="t-price" id="tk4">—</div><div class="t-chg up" id="tc4">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 100 (1s)</div><div class="t-price" id="tk5">—</div><div class="t-chg dn" id="tc5">-0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Volatility 10</div><div class="t-price" id="tk6">—</div><div class="t-chg up">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Volatility 50</div><div class="t-price" id="tk7">—</div><div class="t-chg dn">-0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 10 (1s)</div><div class="t-price">—</div><div class="t-chg up">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 25 (1s)</div><div class="t-price">—</div><div class="t-chg up">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 50 (1s)</div><div class="t-price">—</div><div class="t-chg dn">-0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 75 (1s)</div><div class="t-price">—</div><div class="t-chg up">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Vol 100 (1s)</div><div class="t-price">—</div><div class="t-chg dn">-0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Volatility 10</div><div class="t-price">—</div><div class="t-chg up">+0.00%</div></div>
+    <div class="t-card"><div class="t-sym">Volatility 50</div><div class="t-price">—</div><div class="t-chg dn">-0.00%</div></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<section class="stats-section">
+  <div class="stat-block fade-up"><div class="stat-num">10+</div><div class="stat-lbl">Live Markets</div></div>
+  <div class="stat-block fade-up"><div class="stat-num">19</div><div class="stat-lbl">Contract Types</div></div>
+  <div class="stat-block fade-up"><div class="stat-num">95%</div><div class="stat-lbl">Max Payout</div></div>
+  <div class="stat-block fade-up"><div class="stat-num">1s</div><div class="stat-lbl">Tick Speed</div></div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="features-header fade-up">
+    <span class="section-label">Platform Features</span>
+    <h2 class="section-title">Everything You Need to Trade</h2>
+    <p class="section-sub">From live tick data to AI-powered signals and automated bots — Elite Binary is built for serious traders.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card fade-up"><div class="feat-icon blue">📊</div><div class="feat-title">Live Candlestick Chart</div><div class="feat-desc">Real-time market-style tick data rendered as live candlestick charts. Watch every price movement as it happens.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon purple">🤖</div><div class="feat-title">AI Signals & Analysis</div><div class="feat-desc">Smart digit pattern recognition powered by machine learning. Get live probability signals based on real tick data.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon green">🛡️</div><div class="feat-title">Target Profit & Stop Loss</div><div class="feat-desc">Built-in automation to protect your capital. Set profit targets and stop-loss limits that activate automatically.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon amber">⚡</div><div class="feat-title">Auto Trader Bot</div><div class="feat-desc">Configure and deploy automated strategies including Martingale. Set max trades, delay, and stop conditions.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon blue">📈</div><div class="feat-title">All Deriv Contract Types</div><div class="feat-desc">Digits, Touch, Lookbacks, Asians, Multipliers, Accumulators, Reset, High/Low and more — all in one platform.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon green">💳</div><div class="feat-title">Platform Wallet</div><div class="feat-desc">Integrated wallet with M-Pesa, card, bank and crypto deposits. Instant STK push for Kenyan traders.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon amber">📋</div><div class="feat-title">Trade Journal Export</div><div class="feat-desc">Download your complete trade history as a CSV journal. Track performance and refine your strategies.</div></div>
+    <div class="feat-card fade-up"><div class="feat-icon purple">🔗</div><div class="feat-title">Refer & Earn</div><div class="feat-desc">Share your referral link and earn 10% commission on every deposit from traders you invite.</div></div>
+  </div>
+</section>
+
+<!-- CONTRACTS -->
+<section class="contracts-section" id="contracts">
+  <div class="contracts-header fade-up">
+    <span class="section-label">Markets & Contract Types</span>
+    <h2 class="section-title">19 Ways to Trade</h2>
+    <p class="section-sub">Access every major Deriv contract type across 10+ volatile indices — all from a single, unified interface.</p>
+  </div>
+  <div class="contracts-grid">
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🔢</div><div class="ct-pill-name">Matches/Differs</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">⚖️</div><div class="ct-pill-name">Even / Odd</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🎯</div><div class="ct-pill-name">Over / Under</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">📈</div><div class="ct-pill-name">Rise / Fall</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">👆</div><div class="ct-pill-name">Touch / No Touch</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🔲</div><div class="ct-pill-name">In / Out Range</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">✖️</div><div class="ct-pill-name">Multiplier</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">📊</div><div class="ct-pill-name">Accumulator</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🔭</div><div class="ct-pill-name">Lookbacks</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🌏</div><div class="ct-pill-name">Asian Options</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🔄</div><div class="ct-pill-name">Reset Call/Put</div></div>
+    <div class="ct-pill fade-up"><div class="ct-pill-icon">🏔️</div><div class="ct-pill-name">High / Low Tick</div></div>
+  </div>
+</section>
+
+<!-- AI SECTION -->
+<section class="ai-section" id="ai-sec">
+  <div class="ai-copy fade-up">
+    <span class="section-label">AI-Powered Signals</span>
+    <h2 class="section-title">Your Edge in Every Trade</h2>
+    <p style="font-size:.92rem;color:var(--text2);line-height:1.8;font-weight:400;margin-bottom:28px">Elite Binary's AI engine continuously analyzes live tick patterns to surface high-confidence trade signals. Even/Odd biases, hot digits, price trends — surfaced in real time.</p>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+      <li style="display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:500;color:var(--text2)"><span style="width:20px;height:20px;border-radius:5px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</span>Digit frequency & bias detection</li>
+      <li style="display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:500;color:var(--text2)"><span style="width:20px;height:20px;border-radius:5px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</span>Price trend momentum signals</li>
+      <li style="display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:500;color:var(--text2)"><span style="width:20px;height:20px;border-radius:5px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</span>Over/Under probability analysis</li>
+      <li style="display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:500;color:var(--text2)"><span style="width:20px;height:20px;border-radius:5px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</span>Confidence-rated signal output</li>
+    </ul>
+    <button class="btn-hero-primary" onclick="showModal('register')">Get Started Free</button>
+  </div>
+  <div class="ai-visual fade-up">
+    <div class="ai-visual-header"><span class="ai-visual-dot"></span><span class="ai-visual-title">AI Signals — Live</span><span class="ai-visual-badge">Beta</span></div>
+    <div class="signal-row"><div class="signal-icon-sm buy">📈</div><div class="signal-info-sm"><div class="signal-title-sm">Even Bias Detected</div><div class="signal-detail-sm">61% of last 200 ticks ended even</div></div><div class="signal-pct high">87%</div></div>
+    <div class="signal-row"><div class="signal-icon-sm buy">🔥</div><div class="signal-info-sm"><div class="signal-title-sm">Digit 7 Running Hot</div><div class="signal-detail-sm">Appeared 18% — consider Matches 7</div></div><div class="signal-pct med">74%</div></div>
+    <div class="signal-row"><div class="signal-icon-sm sell">📉</div><div class="signal-info-sm"><div class="signal-title-sm">Downtrend Detected</div><div class="signal-detail-sm">Price fell 0.0082 over last 10 ticks</div></div><div class="signal-pct med">62%</div></div>
+    <div class="signal-row"><div class="signal-icon-sm neutral">⚡</div><div class="signal-info-sm"><div class="signal-title-sm">Over 5 Pattern</div><div class="signal-detail-sm">57% of ticks end with digit &gt; 5</div></div><div class="signal-pct high">78%</div></div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust-section" id="trust">
+  <div class="trust-header fade-up">
+    <span class="section-label">Trader Reviews</span>
+    <h2 class="section-title">Trusted by Traders</h2>
+    <p class="section-sub">Join a growing community of traders using Elite Binary to execute smarter, faster trades.</p>
+  </div>
+  <div class="trust-grid">
+    <div class="trust-card fade-up"><div class="trust-stars">★★★★★</div><p class="trust-quote">"The AI signals are genuinely useful. I noticed the digit bias detection helped me time my Even/Odd entries much better. The auto bot with Martingale is a game-changer."</p><div class="trust-author"><div class="trust-avatar" style="background:var(--blue)">JK</div><div><div class="trust-name">James K.</div><div class="trust-loc">Nairobi, Kenya</div></div></div></div>
+    <div class="trust-card fade-up"><div class="trust-stars">★★★★★</div><p class="trust-quote">"Clean interface, fast execution. The M-Pesa integration is seamless — deposits hit instantly. Having all 19 contract types in one place is exactly what I needed."</p><div class="trust-author"><div class="trust-avatar" style="background:var(--green)">AM</div><div><div class="trust-name">Amara M.</div><div class="trust-loc">Mombasa, Kenya</div></div></div></div>
+    <div class="trust-card fade-up"><div class="trust-stars">★★★★☆</div><p class="trust-quote">"Love the trade journal export and the stop-loss automation. The demo account with $10k virtual balance let me test strategies safely before going live."</p><div class="trust-author"><div class="trust-avatar" style="background:var(--purple)">SO</div><div><div class="trust-name">Samuel O.</div><div class="trust-loc">Kisumu, Kenya</div></div></div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="cta-title fade-up">Ready to Trade<br><span style="color:var(--blue)">Elite Binary?</span></h2>
+  <p class="cta-sub fade-up">Create your free account in seconds. Start with a $10,000 demo balance and upgrade to real trading when ready.</p>
+  <div class="cta-btns fade-up">
+    <button class="btn-hero-primary" onclick="showModal('login')">Login & Start Trading</button>
+    <button class="btn-hero-secondary" onclick="showModal('register')">Create Free Account</button>
+  </div>
+  <p class="cta-note fade-up">No hidden fees. <a onclick="showModal('register')">Register now — it's free →</a></p>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Elite<span class="footer-logo-accent">Binary</span></div>
+  <div class="footer-links">
+    <span class="footer-link">Terms</span>
+    <span class="footer-link">Privacy</span>
+    <span class="footer-link" onclick="alert('Email: support@elitebinary.com')">Support</span>
+  </div>
+  <div class="footer-copy">© 2025 Elite Binary. All rights reserved. v2.0</div>
+</footer>
+
+<div class="risk-notice">⚠️ Binary options trading involves significant risk of loss. Past performance is not indicative of future results. Only trade with funds you can afford to lose. This platform is for informational and entertainment purposes. Always trade responsibly.</div>
+
+<script>
+// ══════════════════════════════════════════════
+// LOCAL DATABASE — same schema as dashboard & admin
+// ══════════════════════════════════════════════
+const DB_USERS   = 'eb_users';
+const DB_SESSION = 'eb_session';
+const DB_CONFIG  = 'eb_config';
+const DB_REFS    = 'eb_referrals';
+
+function getDB()   { try{ return JSON.parse(localStorage.getItem(DB_USERS)||'[]'); }catch(e){ return []; } }
+function saveDB(u) { localStorage.setItem(DB_USERS, JSON.stringify(u)); }
+function getSess() { try{ return JSON.parse(localStorage.getItem(DB_SESSION)||'null'); }catch(e){ return null; } }
+function saveSess(s){ localStorage.setItem(DB_SESSION, JSON.stringify(s)); }
+function hashPw(pw){ return btoa(unescape(encodeURIComponent(pw+'_eb_2024'))); }
+function genRef()  { return 'EB-'+Math.random().toString(36).substr(2,6).toUpperCase(); }
+function genId()   { return 'u_'+Date.now()+'_'+Math.random().toString(36).substr(2,5); }
+function genToken(){ return 'tk_'+Date.now()+'_'+Math.random().toString(36).substr(2,14); }
+
+// ── Seed admin + config on first run ──
+(function seed(){
+  const users=getDB();
+  if(!users.find(u=>u.role==='admin')){
+    users.push({
+      id:'admin001',name:'Admin',email:'admin@elitebinary.com',phone:'000',
+      password:hashPw('Admin@2024'),role:'admin',balance:999999,
+      referral_code:'EB-ADMIN',deposits:[],withdrawals:[],referrals:[],
+      created_at:new Date().toISOString()
+    });
+    saveDB(users);
+  }
+  if(!localStorage.getItem(DB_CONFIG)){
+    localStorage.setItem(DB_CONFIG,JSON.stringify({
+      win_probability:0.5,payout_rate:0.952,
+      min_stake:0.35,max_stake:10000,
+      min_deposit:10,min_withdrawal:10,
+      auto_approve_withdrawals:false
+    }));
+  }
+})();
+
+// ── Auto-login: if valid session redirect ──
+(function autoLogin(){
+  const s=getSess();
+  if(!s) return;
+  if(s.expiry&&Date.now()>s.expiry){ localStorage.removeItem(DB_SESSION); return; }
+  const users=getDB();
+  const user=users.find(u=>u.id===s.userId&&u.password===s.pwHash);
+  if(!user){ localStorage.removeItem(DB_SESSION); return; }
+  // Update nav to show logged-in state
+  localStorage.setItem('eliteBinaryUser',JSON.stringify(user));
+  localStorage.setItem('eliteBinaryToken',s.token);
+  updateNavForLoggedIn(user);
+})();
+
+// ── Check referral param ──
+(function checkRef(){
+  const ref=new URLSearchParams(location.search).get('ref');
+  if(ref){
+    const ri=document.getElementById('r-ref');
+    if(ri) ri.value=ref;
+    showModal('register');
+  }
+})();
+
+function updateNavForLoggedIn(user){
+  const btn=document.getElementById('nav-cta-btn');
+  const mBtn=document.getElementById('nav-mobile-btn');
+  if(btn){ btn.textContent=user.name||'My Account'; btn.onclick=()=>window.location.href='/dashboard.html'; }
+  if(mBtn){ mBtn.textContent='Dashboard'; mBtn.onclick=()=>window.location.href='/dashboard.html'; }
+}
+
+// ══════════════════════════════════════════════
+// MODAL CONTROL
+// ══════════════════════════════════════════════
+let currentTab='login';
+
+function showModal(tab){
+  tab=tab||'login';
+  document.getElementById('auth-modal').classList.add('open');
+  switchTab(tab);
+  hideMsg();
+}
+function hideModal(){
+  document.getElementById('auth-modal').classList.remove('open');
+  hideMsg();
+}
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('form-login').style.display    = tab==='login'?'block':'none';
+  document.getElementById('form-register').style.display = tab==='register'?'block':'none';
+  document.getElementById('tab-login').classList.toggle('on',    tab==='login');
+  document.getElementById('tab-register').classList.toggle('on', tab==='register');
+  const titles={login:'Welcome Back',register:'Create Account'};
+  const subs={login:'Sign in to your trading account',register:'Join Elite Binary — it\'s free'};
+  document.getElementById('modal-title').textContent    = titles[tab];
+  document.getElementById('modal-subtitle').textContent = subs[tab];
+  hideMsg();
+}
+
+// ══════════════════════════════════════════════
+// FORM HELPERS
+// ══════════════════════════════════════════════
+function togPw(id,el){
+  const i=document.getElementById(id);
+  i.type=i.type==='password'?'text':'password';
+  el.textContent=i.type==='password'?'👁':'🙈';
+}
+function chkStr(){
+  const pw=document.getElementById('r-pw').value;
+  document.getElementById('sw').style.display='block';
+  let s=0;
+  if(pw.length>=6)s++;if(pw.length>=10)s++;
+  if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^a-zA-Z0-9]/.test(pw))s++;
+  const lvs=[
+    {w:'20%',c:'#f43f5e',l:'Too short'},{w:'40%',c:'#f43f5e',l:'Weak'},
+    {w:'60%',c:'#f59e0b',l:'Fair'},{w:'80%',c:'#3b82f6',l:'Good'},{w:'100%',c:'#10b981',l:'Strong'}
+  ];
+  const lv=lvs[Math.min(s,4)];
+  document.getElementById('sfill').style.width=lv.w;
+  document.getElementById('sfill').style.background=lv.c;
+  document.getElementById('stxt').textContent=lv.l;
+  document.getElementById('stxt').style.color=lv.c;
+}
+function chkCf(){
+  const pw=document.getElementById('r-pw').value;
+  const cf=document.getElementById('r-cf').value;
+  const inp=document.getElementById('r-cf');const em=document.getElementById('r-cf-e');
+  if(cf&&pw!==cf){inp.classList.add('err');em.style.display='block';}
+  else{inp.classList.remove('err');em.style.display='none';}
+}
+function togTerms(){ const c=document.getElementById('tchk');c.checked=!c.checked;updTerms(); }
+function updTerms(){ document.getElementById('terms-row').classList.toggle('on',document.getElementById('tchk').checked); }
+function setErr(id,msg){
+  const i=document.getElementById(id);const e=document.getElementById(id+'-e');
+  i.classList.add('err');if(e){e.textContent=msg;e.style.display='block';}
+}
+function clrErr(id){
+  const i=document.getElementById(id);const e=document.getElementById(id+'-e');
+  if(i)i.classList.remove('err');if(e)e.style.display='none';
+}
+function showMsg(m,t){
+  const el=document.getElementById('auth-msg');
+  el.className='auth-msg '+t;el.textContent=m;
+  if(t==='ok')setTimeout(()=>el.style.display='none',5000);
+}
+function hideMsg(){
+  const el=document.getElementById('auth-msg');
+  if(el){el.style.display='none';el.className='auth-msg';}
+}
+
+// ══════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════
+function doLogin(){
+  hideMsg();
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pw=document.getElementById('l-pw').value;
+  let ok=true;
+  if(!email){setErr('l-email','Enter your email');ok=false;}else clrErr('l-email');
+  if(!pw){setErr('l-pw','Enter your password');ok=false;}else clrErr('l-pw');
+  if(!ok) return;
+
+  const btn=document.getElementById('login-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>Signing in…';
+
+  setTimeout(()=>{
+    const users=getDB();
+    const user=users.find(u=>u.email===email&&u.password===hashPw(pw));
+    btn.disabled=false;btn.textContent='Sign In';
+    if(!user){showMsg('Invalid email or password. Please try again.','err');return;}
+
+    const token=genToken();
+    saveSess({userId:user.id,pwHash:user.password,token,expiry:Date.now()+30*24*60*60*1000});
+    localStorage.setItem('eliteBinaryUser',JSON.stringify(user));
+    localStorage.setItem('eliteBinaryToken',token);
+
+    showMsg('Welcome back, '+user.name+'! Redirecting…','ok');
+    setTimeout(()=>{
+      if(user.role==='admin') window.location.href='/admin.html';
+      else window.location.href='/dashboard.html';
+    },700);
+  },450);
+}
+
+// ══════════════════════════════════════════════
+// REGISTER
+// ══════════════════════════════════════════════
+function doRegister(){
+  hideMsg();
+  const name  =document.getElementById('r-name').value.trim();
+  const email =document.getElementById('r-email').value.trim().toLowerCase();
+  const phone =document.getElementById('r-phone').value.trim();
+  const pw    =document.getElementById('r-pw').value;
+  const cf    =document.getElementById('r-cf').value;
+  const ref   =document.getElementById('r-ref').value.trim().toUpperCase();
+  const terms =document.getElementById('tchk').checked;
+  let ok=true;
+
+  if(!name)                               {setErr('r-name','Enter your full name');ok=false;}    else clrErr('r-name');
+  if(!email||!/\S+@\S+\.\S+/.test(email)){setErr('r-email','Enter a valid email');ok=false;}   else clrErr('r-email');
+  if(!phone)                              {setErr('r-phone','Enter your phone number');ok=false;} else clrErr('r-phone');
+  if(!pw||pw.length<6)                    {setErr('r-pw','Password must be at least 6 characters');ok=false;}else clrErr('r-pw');
+  if(!cf||pw!==cf)                        {setErr('r-cf','Passwords do not match');ok=false;}   else clrErr('r-cf');
+  if(!terms){showMsg('You must agree to the Terms of Service to continue','err');ok=false;}
+  if(!ok) return;
+
+  const users=getDB();
+  if(users.find(u=>u.email===email)){showMsg('Email already registered. Please login.','err');return;}
+
+  const btn=document.getElementById('reg-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>Creating account…';
+
+  setTimeout(()=>{
+    let referrerId=null;
+    if(ref){ const referrer=users.find(u=>u.referral_code===ref);if(referrer)referrerId=referrer.id; }
+
+    const newUser={
+      id:genId(),name,email,phone,
+      password:hashPw(pw),role:'user',
+      balance:10000,
+      referral_code:genRef(),
+      referred_by:referrerId,
+      referrals:[],deposits:[],withdrawals:[],
+      created_at:new Date().toISOString()
+    };
+    users.push(newUser);
+    saveDB(users);
+
+    if(referrerId){
+      const refs=JSON.parse(localStorage.getItem(DB_REFS)||'[]');
+      refs.push({referrer_id:referrerId,referred_id:newUser.id,bonus_paid:false,bonus_amount:0,deposit_amount:0,created_at:new Date().toISOString()});
+      localStorage.setItem(DB_REFS,JSON.stringify(refs));
+    }
+
+    const token=genToken();
+    saveSess({userId:newUser.id,pwHash:newUser.password,token,expiry:Date.now()+30*24*60*60*1000});
+    localStorage.setItem('eliteBinaryUser',JSON.stringify(newUser));
+    localStorage.setItem('eliteBinaryToken',token);
+
+    btn.disabled=false;btn.textContent='Create Account';
+    showMsg('Account created! Welcome to EliteBinary 🎉','ok');
+    setTimeout(()=>window.location.href='/dashboard.html',800);
+  },600);
+}
+
+// ══════════════════════════════════════════════
+// LIVE TICKER via Deriv WebSocket
+// ══════════════════════════════════════════════
+const APP_ID=1089;
+let ws;
+const SYMS=[
+  {id:'1HZ10V',el1:'tk1',el2:'tc1'},{id:'1HZ25V',el1:'tk2',el2:'tc2'},
+  {id:'1HZ50V',el1:'tk3',el2:'tc3'},{id:'1HZ75V',el1:'tk4',el2:'tc4'},
+  {id:'1HZ100V',el1:'tk5',el2:'tc5'},{id:'R_10',el1:'tk6',el2:null},
+  {id:'R_50',el1:'tk7',el2:null},
+];
+const prevPrices={};
+function fmtP(p){ if(!p)return'—';if(p>=10000)return p.toFixed(2);if(p>=100)return p.toFixed(3);return p.toFixed(5); }
+function connectTicker(){
+  try{if(ws)ws.close();}catch(e){}
+  ws=new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}&l=EN&brand=deriv`);
+  ws.onopen=()=>{
+    SYMS.forEach((s,i)=>setTimeout(()=>{try{ws.send(JSON.stringify({ticks:s.id,subscribe:1}));}catch(e){}},i*150));
+    setInterval(()=>{try{ws.send(JSON.stringify({ping:1}));}catch(e){}},25000);
+  };
+  ws.onmessage=e=>{
+    try{
+      const d=JSON.parse(e.data);if(d.msg_type!=='tick')return;
+      const sym=d.tick.symbol,price=parseFloat(d.tick.quote);
+      const match=SYMS.find(s=>s.id===sym);if(!match)return;
+      const prev=prevPrices[sym];const chg=prev?((price-prev)/prev*100):0;
+      prevPrices[sym]=price;
+      const pe=document.getElementById(match.el1);if(pe)pe.textContent=fmtP(price);
+      if(match.el2){const ce=document.getElementById(match.el2);if(ce){ce.textContent=(chg>=0?'+':'')+chg.toFixed(4)+'%';ce.className='t-chg '+(chg>=0?'up':'dn');}}
+    }catch(err){}
+  };
+  ws.onclose=()=>setTimeout(connectTicker,4000);
+  ws.onerror=()=>{};
+}
+connectTicker();
+
+// ══════════════════════════════════════════════
+// SCROLL REVEAL
+// ══════════════════════════════════════════════
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');observer.unobserve(e.target);}});
+},{threshold:.15});
+document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+
+// ══════════════════════════════════════════════
+// KEYBOARD & CLOSE
+// ══════════════════════════════════════════════
+document.getElementById('auth-modal').addEventListener('click',function(e){
+  if(e.target===this) hideModal();
+});
+document.addEventListener('keydown',e=>{
+  const modal=document.getElementById('auth-modal');
+  if(e.key==='Escape'&&modal.classList.contains('open')) hideModal();
+  if(e.key==='Enter'&&modal.classList.contains('open')){
+    if(currentTab==='login') doLogin();
+    else doRegister();
+  }
+});
+</script>
+</body>
+</html>

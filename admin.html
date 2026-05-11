@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>EliteBinary — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#060910;font-family:'Lexend',sans-serif;color:#e2e8f8;min-height:100%;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;outline:none;border:none}
+:root{
+  --bg:#060910;--bg2:#0d1420;--bg3:#111c2e;--card:#0d1420;
+  --border:#1a2840;--border2:#223050;
+  --blue:#1b6ef5;--blue2:#1458c8;--blue-dim:rgba(27,110,245,.15);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.12);
+  --purple:#8b5cf6;--text:#e2e8f8;--text2:#6b82a8;--text3:#2e4060;
+}
+/* LAYOUT */
+.admin{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid var(--border)}
+.sb-logo-ico{width:32px;height:32px;background:linear-gradient(135deg,#e11d48,#be123c);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:#fff;flex-shrink:0}
+.sb-logo-name{font-size:.92rem;font-weight:800;color:#fff}
+.sb-logo-tag{font-size:.62rem;color:var(--text3);margin-top:1px}
+.sb-nav{padding:12px 10px;flex:1}
+.sb-section{font-size:.6rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:12px 8px 6px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text2);transition:.15s;margin-bottom:2px}
+.sb-item:hover{background:var(--bg3);color:var(--text)}
+.sb-item.active{background:var(--blue-dim);color:var(--blue)}
+.sb-item .sb-ico{font-size:1rem;width:22px;text-align:center}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:10px}
+.sb-footer{padding:14px;border-top:1px solid var(--border)}
+.sb-admin-info{background:var(--bg3);border-radius:8px;padding:10px;margin-bottom:10px}
+.sai-label{font-size:.62rem;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:3px}
+.sai-name{font-size:.82rem;font-weight:700;color:var(--text)}
+.sai-email{font-size:.7rem;color:var(--text3);margin-top:1px}
+.logout-btn{width:100%;padding:9px;background:var(--red-dim);border:1px solid rgba(239,68,68,.25);color:var(--red);border-radius:7px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.15s}
+.logout-btn:hover{background:rgba(239,68,68,.2)}
+/* MAIN */
+.main{margin-left:240px;flex:1;padding:24px;display:flex;flex-direction:column;gap:20px;min-height:100vh}
+.page{display:none}.page.active{display:block}
+/* PAGE HEADER */
+.page-header{margin-bottom:20px}
+.page-title{font-size:1.3rem;font-weight:800;color:#fff}
+.page-sub{font-size:.78rem;color:var(--text2);margin-top:3px}
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:-20px;right:-20px;width:70px;height:70px;border-radius:50%;opacity:.07}
+.stat-card.blue::after{background:var(--blue)}.stat-card.green::after{background:var(--green)}.stat-card.red::after{background:var(--red)}.stat-card.amber::after{background:var(--amber)}
+.sc-label{font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.sc-value{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:800;color:#fff}
+.sc-value.blue{color:var(--blue)}.sc-value.green{color:var(--green)}.sc-value.red{color:var(--red)}.sc-value.amber{color:var(--amber)}
+.sc-sub{font-size:.7rem;color:var(--text3);margin-top:4px}
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:.88rem;font-weight:700;color:#fff}
+.panel-body{padding:18px}
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.form-input,.form-select{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:.85rem;transition:.15s;font-family:'Lexend',sans-serif}
+.form-input:focus,.form-select:focus{border-color:var(--blue)}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b82a8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+.form-hint{font-size:.67rem;color:var(--text3);margin-top:2px}
+.range-wrap{display:flex;align-items:center;gap:10px}
+.range-wrap input[type=range]{flex:1;accent-color:var(--blue)}
+.range-val{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;color:var(--blue);min-width:40px;text-align:right}
+/* BUTTONS */
+.btn{padding:10px 18px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;transition:.15s;border:none}
+.btn.primary{background:var(--blue);color:#fff}.btn.primary:hover{background:var(--blue2)}
+.btn.success{background:var(--green);color:#000}.btn.success:hover{background:#1eaa50}
+.btn.danger{background:var(--red);color:#fff}.btn.danger:hover{background:#cc2222}
+.btn.warning{background:var(--amber);color:#000}.btn.warning:hover{background:#d98a00}
+.btn.ghost{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}.btn.ghost:hover{color:var(--text)}
+.btn.sm{padding:6px 12px;font-size:.75rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+tbody td{padding:11px 12px;font-size:.8rem;border-bottom:1px solid rgba(26,40,64,.6);vertical-align:middle}
+tbody tr:hover td{background:rgba(27,110,245,.04)}
+tbody tr:last-child td{border-bottom:none}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.78rem}
+/* BADGES */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:.67rem;font-weight:700;white-space:nowrap}
+.chip.green{background:var(--green-dim);color:var(--green)}.chip.red{background:var(--red-dim);color:var(--red)}
+.chip.amber{background:var(--amber-dim);color:var(--amber)}.chip.blue{background:var(--blue-dim);color:var(--blue)}
+.chip.purple{background:rgba(139,92,246,.12);color:var(--purple)}
+/* TOGGLE */
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer}
+.toggle-track{width:44px;height:24px;background:var(--border2);border-radius:12px;position:relative;transition:.2s;flex-shrink:0}
+.toggle-track.on{background:var(--green)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s}
+.toggle-track.on .toggle-thumb{left:23px}
+.toggle-label{font-size:.82rem;font-weight:600;color:var(--text)}
+/* MSG */
+.save-msg{font-size:.78rem;font-weight:600;margin-top:10px;min-height:18px}
+.save-msg.ok{color:var(--green)}.save-msg.err{color:var(--red)}
+/* USER ROW */
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0}
+.user-info-cell{display:flex;align-items:center;gap:10px}
+/* SEARCH */
+.search-bar{display:flex;gap:10px;margin-bottom:14px}
+.search-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.82rem;font-family:'Lexend',sans-serif}
+.search-input:focus{border-color:var(--blue);outline:none}
+/* CONFIG CARD */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* LOG */
+.log-entry{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.le-left{display:flex;flex-direction:column;gap:2px}
+.le-action{font-size:.8rem;font-weight:700;color:var(--text)}
+.le-meta{font-size:.68rem;color:var(--text3)}
+.le-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700}
+/* TOAST */
+.toast{position:fixed;top:20px;right:20px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;z-index:999;opacity:0;transform:translateY(-8px);transition:all .25s;pointer-events:none;min-width:220px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:rgba(34,197,94,.4)}.toast.err{border-color:rgba(239,68,68,.4)}.toast.info{border-color:rgba(27,110,245,.4)}
+.toast-t{font-size:.85rem;font-weight:800}
+.toast.ok .toast-t{color:var(--green)}.toast.err .toast-t{color:var(--red)}.toast.info .toast-t{color:var(--blue)}
+.toast-s{font-size:.72rem;color:var(--text2);margin-top:2px}
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--text3);font-size:.82rem}
+.empty-i{font-size:1.8rem;margin-bottom:8px}
+@media(max-width:900px){
+  .sidebar{width:200px}.main{margin-left:200px;padding:16px}
+  .stats-row{grid-template-columns:1fr 1fr}.form-grid.three{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .sidebar{display:none}.main{margin-left:0}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="admin">
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-ico">EB</div>
+    <div>
+      <div class="sb-logo-name">EliteBinary</div>
+      <div class="sb-logo-tag">Admin Panel</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <div class="sb-item active" onclick="goPage('pg-dashboard',this)"><span class="sb-ico">📊</span>Dashboard</div>
+    <div class="sb-section">Management</div>
+    <div class="sb-item" onclick="goPage('pg-users',this)"><span class="sb-ico">👥</span>Users</div>
+    <div class="sb-item" onclick="goPage('pg-trades',this)"><span class="sb-ico">📈</span>Trades</div>
+    <div class="sb-item" onclick="goPage('pg-deposits',this)"><span class="sb-ico">⬇️</span>Deposits</div>
+    <div class="sb-item" onclick="goPage('pg-withdrawals',this)"><span class="sb-ico">⬆️</span>Withdrawals <span class="sb-badge" id="wd-badge">0</span></div>
+    <div class="sb-item" onclick="goPage('pg-referrals',this)"><span class="sb-ico">🔗</span>Referrals</div>
+    <div class="sb-section">Platform</div>
+    <div class="sb-item" onclick="goPage('pg-config',this)"><span class="sb-ico">⚙️</span>Configuration</div>
+    <div class="sb-item" onclick="goPage('pg-logs',this)"><span class="sb-ico">📋</span>Activity Log</div>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-admin-info">
+      <div class="sai-label">Logged in as</div>
+      <div class="sai-name" id="admin-name">Admin</div>
+      <div class="sai-email" id="admin-email">admin@elitebinary.com</div>
+    </div>
+    <button class="logout-btn" onclick="adminLogout()">Logout</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="pg-dashboard">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Platform overview — live data from localStorage</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card blue"><div class="sc-label">Total Users</div><div class="sc-value blue" id="st-users">0</div><div class="sc-sub">Registered accounts</div></div>
+      <div class="stat-card green"><div class="sc-label">Total Trades</div><div class="sc-value green" id="st-trades">0</div><div class="sc-sub">All time</div></div>
+      <div class="stat-card amber"><div class="sc-label">Pending Withdrawals</div><div class="sc-value amber" id="st-wd">0</div><div class="sc-sub">Awaiting approval</div></div>
+      <div class="stat-card red"><div class="sc-label">Platform Balance</div><div class="sc-value red" id="st-balance">$0.00</div><div class="sc-sub">Sum of all user balances</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Recent Trades</div></div>
+        <div class="panel-body" style="padding:0">
+          <div class="table-wrap"><table><thead><tr><th>User</th><th>Contract</th><th>Stake</th><th>Result</th><th>Time</th></tr></thead><tbody id="dash-trades"></tbody></table></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Pending Withdrawals</div><button class="btn primary sm" onclick="goPage('pg-withdrawals',null)">View All</button></div>
+        <div class="panel-body" style="padding:0">
+          <div class="table-wrap"><table><thead><tr><th>User</th><th>Amount</th><th>Phone</th><th>Action</th></tr></thead><tbody id="dash-withdrawals"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USERS PAGE -->
+  <div class="page" id="pg-users">
+    <div class="page-header">
+      <div class="page-title">Users</div>
+      <div class="page-sub">All registered accounts</div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">User Management</div>
+        <div style="display:flex;gap:8px">
+          <input class="search-input" style="width:200px" id="user-search" placeholder="Search by name or email…" oninput="renderUsers()">
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>User</th><th>Email</th><th>Phone</th><th>Balance</th><th>Trades</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <!-- Edit User Modal -->
+    <div id="edit-user-panel" style="display:none" class="panel">
+      <div class="panel-header"><div class="panel-title">Edit User — <span id="edit-user-name"></span></div><button class="btn ghost sm" onclick="document.getElementById('edit-user-panel').style.display='none'">✕ Close</button></div>
+      <div class="panel-body">
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="eu-name" type="text"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="eu-email" type="email"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="eu-phone" type="tel"></div>
+          <div class="form-group"><label class="form-label">Balance ($)</label><input class="form-input" id="eu-balance" type="number" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="eu-role"><option value="user">User</option><option value="admin">Admin</option></select></div>
+          <div class="form-group"><label class="form-label">New Password <span style="color:var(--text3);font-weight:400">(leave blank to keep)</span></label><input class="form-input" id="eu-pw" type="password" placeholder="New password"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn primary" onclick="saveEditUser()">Save Changes</button>
+          <button class="btn danger" onclick="deleteUser()">Delete User</button>
+        </div>
+        <div class="save-msg" id="eu-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRADES PAGE -->
+  <div class="page" id="pg-trades">
+    <div class="page-header"><div class="page-title">All Trades</div><div class="page-sub">Every trade placed on the platform</div></div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Trade History</div>
+        <input class="search-input" style="width:200px" id="trade-search" placeholder="Search user or symbol…" oninput="renderTrades()">
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>User</th><th>Symbol</th><th>Contract</th><th>Stake</th><th>P&amp;L</th><th>Result</th><th>Date</th></tr></thead>
+          <tbody id="trades-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPOSITS PAGE -->
+  <div class="page" id="pg-deposits">
+    <div class="page-header"><div class="page-title">Deposits</div><div class="page-sub">All user deposit records</div></div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Deposit Records</div></div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Contact</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="deposits-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WITHDRAWALS PAGE -->
+  <div class="page" id="pg-withdrawals">
+    <div class="page-header"><div class="page-title">Withdrawals</div><div class="page-sub">Approve or reject withdrawal requests</div></div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Withdrawal Requests</div>
+        <div class="filter-tabs" style="display:flex;gap:6px">
+          <button class="btn ghost sm on" id="wd-filter-all" onclick="setWdFilter('all',this)">All</button>
+          <button class="btn ghost sm" id="wd-filter-pending" onclick="setWdFilter('pending',this)">Pending</button>
+          <button class="btn ghost sm" id="wd-filter-done" onclick="setWdFilter('done',this)">Done</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>User</th><th>Amount</th><th>Phone</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="withdrawals-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFERRALS PAGE -->
+  <div class="page" id="pg-referrals">
+    <div class="page-header"><div class="page-title">Referrals</div><div class="page-sub">Referral program activity and bonuses</div></div>
+    <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="stat-card blue"><div class="sc-label">Total Referrals</div><div class="sc-value blue" id="ref-total">0</div></div>
+      <div class="stat-card green"><div class="sc-label">Bonuses Paid</div><div class="sc-value green" id="ref-bonuses">$0.00</div></div>
+      <div class="stat-card amber"><div class="sc-label">Pending Bonuses</div><div class="sc-value amber" id="ref-pending">0</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Referral Records</div></div>
+      <div class="panel-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Referrer</th><th>Referred User</th><th>Deposit</th><th>Bonus Paid</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="referrals-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG PAGE -->
+  <div class="page" id="pg-config">
+    <div class="page-header"><div class="page-title">Platform Configuration</div><div class="page-sub">Control all platform settings — changes apply instantly to all users</div></div>
+
+    <!-- Trading Config -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header"><div class="panel-title">🎯 Trading Settings</div></div>
+      <div class="panel-body">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="form-group">
+            <label class="form-label">Win Probability (0 – 1)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-win-prob" min="0.01" max="0.99" step="0.01" oninput="document.getElementById('cfg-win-prob-val').textContent=parseFloat(this.value).toFixed(2)">
+              <span class="range-val" id="cfg-win-prob-val">0.50</span>
+            </div>
+            <div class="form-hint">Controls the probability of winning trades. 0.5 = 50% fair. Lower = house wins more.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payout Rate (multiplier)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-payout" min="0.1" max="9.9" step="0.01" oninput="document.getElementById('cfg-payout-val').textContent=parseFloat(this.value).toFixed(2)">
+              <span class="range-val" id="cfg-payout-val">0.95</span>
+            </div>
+            <div class="form-hint">Payout on win = stake × (1 + rate). 0.952 means 95.2% return on stake.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Stake ($)</label>
+            <input type="number" class="form-input" id="cfg-min-stake" min="0.01" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Maximum Stake ($)</label>
+            <input type="number" class="form-input" id="cfg-max-stake" min="1" step="1">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deposit/Withdrawal Config -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header"><div class="panel-title">💳 Deposit & Withdrawal Settings</div></div>
+      <div class="panel-body">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="form-group">
+            <label class="form-label">Minimum Deposit ($)</label>
+            <input type="number" class="form-input" id="cfg-min-dep" min="1" step="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Withdrawal ($)</label>
+            <input type="number" class="form-input" id="cfg-min-wd" min="1" step="1">
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label" style="display:block;margin-bottom:8px">Auto-Approve Withdrawals</label>
+          <label class="toggle" onclick="toggleAutoWd()">
+            <div class="toggle-track" id="auto-wd-toggle"><div class="toggle-thumb"></div></div>
+            <span class="toggle-label" id="auto-wd-label">Disabled — manual approval required</span>
+          </label>
+          <div class="form-hint" style="margin-top:6px">When enabled, withdrawals are processed instantly without admin review.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn primary" onclick="saveConfig()">💾 Save All Settings</button>
+      <button class="btn ghost" onclick="loadConfig()">↺ Reset to Current</button>
+    </div>
+    <div class="save-msg" id="cfg-msg"></div>
+  </div>
+
+  <!-- LOGS PAGE -->
+  <div class="page" id="pg-logs">
+    <div class="page-header"><div class="page-title">Activity Log</div><div class="page-sub">Recent platform activity</div></div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Admin Actions</div><button class="btn ghost sm" onclick="clearLogs()">Clear Logs</button></div>
+      <div class="panel-body" id="logs-body"><div class="empty"><div class="empty-i">📋</div>No activity logged yet</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /admin -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-t" id="toast-t"></div><div class="toast-s" id="toast-s"></div></div>
+
+<script>
+// ══════════════════════════════════════════════
+// DB HELPERS
+// ══════════════════════════════════════════════
+const DB_USERS   = 'eb_users';
+const DB_SESSION = 'eb_session';
+const DB_CONFIG  = 'eb_config';
+const DB_REFS    = 'eb_referrals';
+const DB_LOGS    = 'eb_admin_logs';
+
+function getDB()    { try{ return JSON.parse(localStorage.getItem(DB_USERS)||'[]');  }catch(e){ return []; } }
+function saveDB(u)  { localStorage.setItem(DB_USERS, JSON.stringify(u)); }
+function getSess()  { try{ return JSON.parse(localStorage.getItem(DB_SESSION)||'null'); }catch(e){ return null; } }
+function getRefs()  { try{ return JSON.parse(localStorage.getItem(DB_REFS)||'[]');  }catch(e){ return []; } }
+function getLogs()  { try{ return JSON.parse(localStorage.getItem(DB_LOGS)||'[]');  }catch(e){ return []; } }
+function hashPw(pw) { return btoa(unescape(encodeURIComponent(pw+'_eb_2024'))); }
+
+function getConfig(){
+  try{ return JSON.parse(localStorage.getItem(DB_CONFIG)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveConfigToDB(cfg){ localStorage.setItem(DB_CONFIG, JSON.stringify(cfg)); }
+
+function addLog(action, detail){
+  const logs = getLogs();
+  logs.unshift({ action, detail, date: new Date().toLocaleString(), ts: Date.now() });
+  if(logs.length > 200) logs.pop();
+  localStorage.setItem(DB_LOGS, JSON.stringify(logs));
+}
+
+// All trades from all users
+function getAllTrades(){
+  const users = getDB();
+  const all = [];
+  users.forEach(u=>{
+    const th = JSON.parse(localStorage.getItem('eb_trades_'+u.id)||'[]');
+    th.forEach(t=>all.push({...t, userName:u.name, userEmail:u.email, userId:u.id}));
+  });
+  return all.sort((a,b)=>b.created_at>a.created_at?1:-1);
+}
+
+// ══════════════════════════════════════════════
+// AUTH CHECK
+// ══════════════════════════════════════════════
+let adminUser = null;
+(function checkAdmin(){
+  const s = getSess();
+  if(!s){ window.location.href='/index.html'; return; }
+  if(s.expiry && Date.now()>s.expiry){ localStorage.removeItem(DB_SESSION); window.location.href='/index.html'; return; }
+  const users = getDB();
+  const user  = users.find(u=>u.id===s.userId&&u.password===s.pwHash);
+  if(!user||user.role!=='admin'){ window.location.href='/index.html'; return; }
+  adminUser = user;
+  document.getElementById('admin-name').textContent  = user.name;
+  document.getElementById('admin-email').textContent = user.email;
+  loadConfig();
+  refreshAll();
+  setInterval(refreshAll, 8000);
+})();
+
+function refreshAll(){
+  renderDashboard();
+  renderUsers();
+  renderTrades();
+  renderDeposits();
+  renderWithdrawals();
+  renderReferrals();
+  renderLogs();
+}
+
+// ══════════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════════
+function goPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  // Trigger specific renders
+  if(id==='pg-users') renderUsers();
+  else if(id==='pg-trades') renderTrades();
+  else if(id==='pg-deposits') renderDeposits();
+  else if(id==='pg-withdrawals') renderWithdrawals();
+  else if(id==='pg-referrals') renderReferrals();
+  else if(id==='pg-config') loadConfig();
+  else if(id==='pg-logs') renderLogs();
+  else renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard(){
+  const users   = getDB().filter(u=>u.role!=='admin');
+  const trades  = getAllTrades();
+  const allWds  = getAllWithdrawals();
+  const pending = allWds.filter(w=>w.status==='pending');
+  const totalBal= users.reduce((s,u)=>s+(u.balance||0),0);
+
+  document.getElementById('st-users').textContent   = users.length;
+  document.getElementById('st-trades').textContent  = trades.length;
+  document.getElementById('st-wd').textContent      = pending.length;
+  document.getElementById('st-balance').textContent = '$'+totalBal.toFixed(2);
+
+  // Badge
+  const badge=document.getElementById('wd-badge');
+  if(badge) badge.textContent=pending.length;
+
+  // Recent trades
+  const tbody=document.getElementById('dash-trades');
+  if(tbody){
+    const recent=trades.slice(0,8);
+    if(!recent.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">No trades yet</td></tr>';return;}
+    tbody.innerHTML=recent.map(t=>`<tr>
+      <td>${t.userName||'—'}</td>
+      <td class="mono">${t.symbol||'—'}</td>
+      <td class="mono">$${t.stake?.toFixed(2)||'—'}</td>
+      <td><span class="chip ${t.status==='won'?'green':'red'}">${t.status?.toUpperCase()}</span></td>
+      <td style="color:var(--text3);font-size:.72rem">${t.time||''}</td>
+    </tr>`).join('');
+  }
+
+  // Pending withdrawals in dash
+  const wbody=document.getElementById('dash-withdrawals');
+  if(wbody){
+    if(!pending.length){wbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">No pending withdrawals</td></tr>';return;}
+    wbody.innerHTML=pending.slice(0,5).map(w=>`<tr>
+      <td>${w.userName||'—'}</td>
+      <td class="mono" style="color:var(--amber)">$${parseFloat(w.amount).toFixed(2)}</td>
+      <td class="mono">${w.phone||'—'}</td>
+      <td><button class="btn success sm" onclick="approveWd('${w.userId}','${w.id}')">Approve</button></td>
+    </tr>`).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+// USERS
+// ══════════════════════════════════════════════
+let editUserId=null;
+function renderUsers(){
+  const tbody=document.getElementById('users-table'); if(!tbody) return;
+  const q=(document.getElementById('user-search')?.value||'').toLowerCase();
+  const users=getDB().filter(u=>u.role!=='admin').filter(u=>!q||(u.name?.toLowerCase().includes(q)||u.email?.toLowerCase().includes(q)));
+  if(!users.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">No users found</td></tr>';return;}
+  tbody.innerHTML=users.map(u=>{
+    const trades=JSON.parse(localStorage.getItem('eb_trades_'+u.id)||'[]');
+    return `<tr>
+      <td><div class="user-info-cell"><div class="user-avatar">${(u.name||'U').slice(0,2).toUpperCase()}</div><div><div style="font-size:.8rem;font-weight:600;color:var(--text)">${u.name}</div><div style="font-size:.68rem;color:var(--text3)">${u.referral_code||''}</div></div></div></td>
+      <td style="font-size:.78rem">${u.email}</td>
+      <td style="font-size:.78rem;color:var(--text2)">${u.phone||'—'}</td>
+      <td class="mono" style="color:var(--green)">$${(u.balance||0).toFixed(2)}</td>
+      <td class="mono">${trades.length}</td>
+      <td style="font-size:.72rem;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleDateString():'—'}</td>
+      <td><div style="display:flex;gap:6px"><button class="btn ghost sm" onclick="editUser('${u.id}')">Edit</button><button class="btn warning sm" onclick="creditUser('${u.id}')">Credit</button></div></td>
+    </tr>`;
+  }).join('');
+}
+function editUser(id){
+  const users=getDB(); const u=users.find(x=>x.id===id); if(!u) return;
+  editUserId=id;
+  document.getElementById('eu-name').value=u.name||'';
+  document.getElementById('eu-email').value=u.email||'';
+  document.getElementById('eu-phone').value=u.phone||'';
+  document.getElementById('eu-balance').value=u.balance||0;
+  document.getElementById('eu-role').value=u.role||'user';
+  document.getElementById('eu-pw').value='';
+  document.getElementById('edit-user-name').textContent=u.name;
+  document.getElementById('edit-user-panel').style.display='block';
+  document.getElementById('eu-msg').textContent='';
+  document.getElementById('edit-user-panel').scrollIntoView({behavior:'smooth'});
+}
+function saveEditUser(){
+  if(!editUserId) return;
+  const users=getDB(); const idx=users.findIndex(u=>u.id===editUserId); if(idx<0) return;
+  const pw=document.getElementById('eu-pw').value;
+  users[idx].name    = document.getElementById('eu-name').value.trim();
+  users[idx].email   = document.getElementById('eu-email').value.trim().toLowerCase();
+  users[idx].phone   = document.getElementById('eu-phone').value.trim();
+  users[idx].balance = parseFloat(document.getElementById('eu-balance').value)||0;
+  users[idx].role    = document.getElementById('eu-role').value;
+  if(pw && pw.length>=6) users[idx].password=hashPw(pw);
+  saveDB(users);
+  addLog('Edit User', users[idx].name+' ('+users[idx].email+')');
+  document.getElementById('eu-msg').className='save-msg ok';
+  document.getElementById('eu-msg').textContent='✓ User updated successfully';
+  renderUsers(); renderDashboard();
+  showToast('Saved','User updated','ok');
+}
+function deleteUser(){
+  if(!editUserId||!confirm('Delete this user? This cannot be undone.')) return;
+  const users=getDB(); const u=users.find(x=>x.id===editUserId);
+  const filtered=users.filter(x=>x.id!==editUserId);
+  saveDB(filtered);
+  localStorage.removeItem('eb_trades_'+editUserId);
+  addLog('Delete User', u?.name||editUserId);
+  document.getElementById('edit-user-panel').style.display='none';
+  editUserId=null;
+  renderUsers(); renderDashboard();
+  showToast('Deleted','User removed','ok');
+}
+function creditUser(id){
+  const amt=parseFloat(prompt('Enter credit amount ($):'));
+  if(!amt||isNaN(amt)||amt<=0){ alert('Invalid amount'); return; }
+  const users=getDB(); const idx=users.findIndex(u=>u.id===id); if(idx<0) return;
+  users[idx].balance=(users[idx].balance||0)+amt;
+  saveDB(users);
+  addLog('Credit User', users[idx].name+' +$'+amt.toFixed(2));
+  showToast('Credited','$'+amt.toFixed(2)+' added to '+users[idx].name,'ok');
+  renderUsers();
+}
+
+// ══════════════════════════════════════════════
+// TRADES
+// ══════════════════════════════════════════════
+function renderTrades(){
+  const tbody=document.getElementById('trades-table'); if(!tbody) return;
+  const q=(document.getElementById('trade-search')?.value||'').toLowerCase();
+  const trades=getAllTrades().filter(t=>!q||(t.userName?.toLowerCase().includes(q)||t.symbol?.toLowerCase().includes(q)));
+  if(!trades.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">No trades found</td></tr>';return;}
+  tbody.innerHTML=trades.slice(0,100).map(t=>`<tr>
+    <td style="font-size:.78rem;font-weight:600">${t.userName||'—'}</td>
+    <td class="mono" style="font-size:.75rem">${t.symbol||'—'}</td>
+    <td style="font-size:.75rem">${t.label||'—'}</td>
+    <td class="mono">$${(t.stake||0).toFixed(2)}</td>
+    <td class="mono" style="color:${t.status==='won'?'var(--green)':'var(--red)'}">${t.status==='won'?'+':'-'}$${Math.abs(t.profit||0).toFixed(2)}</td>
+    <td><span class="chip ${t.status==='won'?'green':'red'}">${t.status?.toUpperCase()}</span></td>
+    <td style="font-size:.7rem;color:var(--text3)">${t.time||''} ${t.date||''}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// DEPOSITS
+// ══════════════════════════════════════════════
+function getAllDeposits(){
+  const users=getDB(); const all=[];
+  users.forEach(u=>(u.deposits||[]).forEach(d=>all.push({...d,userName:u.name,userEmail:u.email,userId:u.id})));
+  return all.sort((a,b)=>b.created_at>a.created_at?1:-1);
+}
+function renderDeposits(){
+  const tbody=document.getElementById('deposits-table'); if(!tbody) return;
+  const deps=getAllDeposits();
+  if(!deps.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No deposits</td></tr>';return;}
+  tbody.innerHTML=deps.map(d=>`<tr>
+    <td style="font-size:.78rem;font-weight:600">${d.userName||'—'}</td>
+    <td class="mono" style="color:var(--green)">+$${parseFloat(d.amount).toFixed(2)}</td>
+    <td style="font-size:.75rem">${d.method||'M-Pesa'}</td>
+    <td class="mono" style="font-size:.75rem">${d.contact||'—'}</td>
+    <td><span class="chip ${d.status==='done'?'green':'amber'}">${d.status==='done'?'✓ Done':'⏳ Pending'}</span></td>
+    <td style="font-size:.7rem;color:var(--text3)">${d.date||'—'}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// WITHDRAWALS
+// ══════════════════════════════════════════════
+let wdFilter='all';
+function getAllWithdrawals(){
+  const users=getDB(); const all=[];
+  users.forEach(u=>(u.withdrawals||[]).forEach(w=>all.push({...w,userName:u.name,userEmail:u.email,userId:u.id})));
+  return all.sort((a,b)=>b.created_at>a.created_at?1:-1);
+}
+function setWdFilter(f,el){
+  wdFilter=f;
+  document.querySelectorAll('.filter-tabs .btn').forEach(b=>{b.classList.remove('primary');b.classList.add('ghost');});
+  if(el){el.classList.remove('ghost');el.classList.add('primary');}
+  renderWithdrawals();
+}
+function renderWithdrawals(){
+  const tbody=document.getElementById('withdrawals-table'); if(!tbody) return;
+  let wds=getAllWithdrawals();
+  if(wdFilter==='pending') wds=wds.filter(w=>w.status==='pending');
+  else if(wdFilter==='done') wds=wds.filter(w=>w.status==='done');
+  if(!wds.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No withdrawals</td></tr>';return;}
+  tbody.innerHTML=wds.map(w=>`<tr>
+    <td style="font-size:.78rem;font-weight:600">${w.userName||'—'}</td>
+    <td class="mono" style="color:var(--amber)">$${parseFloat(w.amount).toFixed(2)}</td>
+    <td class="mono" style="font-size:.75rem">${w.phone||'—'}</td>
+    <td><span class="chip ${w.status==='done'?'green':'amber'}">${w.status==='done'?'✓ Done':'⏳ Pending'}</span></td>
+    <td style="font-size:.7rem;color:var(--text3)">${w.date||'—'}</td>
+    <td>${w.status==='pending'?`<div style="display:flex;gap:6px"><button class="btn success sm" onclick="approveWd('${w.userId}','${w.id}')">✓ Approve</button><button class="btn danger sm" onclick="rejectWd('${w.userId}','${w.id}')">✗ Reject</button></div>`:'<span style="color:var(--text3);font-size:.75rem">Processed</span>'}</td>
+  </tr>`).join('');
+}
+function approveWd(userId,wdId){
+  const users=getDB(); const idx=users.findIndex(u=>u.id===userId); if(idx<0) return;
+  const wdIdx=(users[idx].withdrawals||[]).findIndex(w=>w.id===wdId); if(wdIdx<0) return;
+  users[idx].withdrawals[wdIdx].status='done';
+  users[idx].withdrawals[wdIdx].approved_at=new Date().toISOString();
+  saveDB(users);
+  const wd=users[idx].withdrawals[wdIdx];
+  addLog('Approve Withdrawal', users[idx].name+' — $'+wd.amount+' to '+wd.phone);
+  showToast('Approved','Withdrawal sent to '+wd.phone,'ok');
+  renderWithdrawals(); renderDashboard();
+}
+function rejectWd(userId,wdId){
+  if(!confirm('Reject this withdrawal and refund the user?')) return;
+  const users=getDB(); const idx=users.findIndex(u=>u.id===userId); if(idx<0) return;
+  const wdIdx=(users[idx].withdrawals||[]).findIndex(w=>w.id===wdId); if(wdIdx<0) return;
+  const wd=users[idx].withdrawals[wdIdx];
+  // Refund balance
+  users[idx].balance=(users[idx].balance||0)+parseFloat(wd.amount);
+  users[idx].withdrawals[wdIdx].status='rejected';
+  saveDB(users);
+  addLog('Reject Withdrawal', users[idx].name+' — $'+wd.amount+' refunded');
+  showToast('Rejected','$'+wd.amount+' refunded to '+users[idx].name,'ok');
+  renderWithdrawals(); renderDashboard(); renderUsers();
+}
+
+// ══════════════════════════════════════════════
+// REFERRALS
+// ══════════════════════════════════════════════
+function renderReferrals(){
+  const refs=getRefs();
+  const users=getDB();
+  document.getElementById('ref-total').textContent=refs.length;
+  const bonuses=refs.filter(r=>r.bonus_paid).reduce((s,r)=>s+(r.bonus_amount||0),0);
+  document.getElementById('ref-bonuses').textContent='$'+bonuses.toFixed(2);
+  document.getElementById('ref-pending').textContent=refs.filter(r=>!r.bonus_paid).length;
+  const tbody=document.getElementById('referrals-table'); if(!tbody) return;
+  if(!refs.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No referrals</td></tr>';return;}
+  tbody.innerHTML=refs.map(r=>{
+    const referrer=users.find(u=>u.id===r.referrer_id);
+    const referred=users.find(u=>u.id===r.referred_id);
+    return `<tr>
+      <td style="font-size:.78rem;font-weight:600">${referrer?.name||'Unknown'}</td>
+      <td style="font-size:.78rem">${referred?.name||'Unknown'}</td>
+      <td class="mono">$${(r.deposit_amount||0).toFixed(2)}</td>
+      <td class="mono" style="color:var(--green)">$${(r.bonus_amount||0).toFixed(2)}</td>
+      <td><span class="chip ${r.bonus_paid?'green':'amber'}">${r.bonus_paid?'✓ Paid':'⏳ Pending'}</span></td>
+      <td style="font-size:.7rem;color:var(--text3)">${r.created_at?new Date(r.created_at).toLocaleDateString():'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════
+let autoWdEnabled=false;
+function loadConfig(){
+  const cfg=getConfig();
+  const wp=cfg.win_probability??0.5;
+  const pr=cfg.payout_rate??0.952;
+  document.getElementById('cfg-win-prob').value=wp;
+  document.getElementById('cfg-win-prob-val').textContent=parseFloat(wp).toFixed(2);
+  document.getElementById('cfg-payout').value=pr;
+  document.getElementById('cfg-payout-val').textContent=parseFloat(pr).toFixed(2);
+  document.getElementById('cfg-min-stake').value=cfg.min_stake??0.35;
+  document.getElementById('cfg-max-stake').value=cfg.max_stake??10000;
+  document.getElementById('cfg-min-dep').value=cfg.min_deposit??10;
+  document.getElementById('cfg-min-wd').value=cfg.min_withdrawal??10;
+  autoWdEnabled=cfg.auto_approve_withdrawals??false;
+  updateAutoWdToggle();
+}
+function updateAutoWdToggle(){
+  const t=document.getElementById('auto-wd-toggle');
+  const l=document.getElementById('auto-wd-label');
+  if(t) t.classList.toggle('on',autoWdEnabled);
+  if(l) l.textContent=autoWdEnabled?'Enabled — instant withdrawal':'Disabled — manual approval required';
+}
+function toggleAutoWd(){ autoWdEnabled=!autoWdEnabled; updateAutoWdToggle(); }
+function saveConfig(){
+  const cfg={
+    win_probability: parseFloat(document.getElementById('cfg-win-prob').value),
+    payout_rate:     parseFloat(document.getElementById('cfg-payout').value),
+    min_stake:       parseFloat(document.getElementById('cfg-min-stake').value),
+    max_stake:       parseFloat(document.getElementById('cfg-max-stake').value),
+    min_deposit:     parseFloat(document.getElementById('cfg-min-dep').value),
+    min_withdrawal:  parseFloat(document.getElementById('cfg-min-wd').value),
+    auto_approve_withdrawals: autoWdEnabled
+  };
+  saveConfigToDB(cfg);
+  addLog('Update Config', `Win prob: ${cfg.win_probability}, Payout: ${cfg.payout_rate}, AutoWD: ${cfg.auto_approve_withdrawals}`);
+  const msg=document.getElementById('cfg-msg');
+  msg.className='save-msg ok'; msg.textContent='✓ Configuration saved — changes apply instantly to all users';
+  showToast('Config Saved','All settings updated','ok');
+  setTimeout(()=>msg.textContent='',4000);
+}
+
+// ══════════════════════════════════════════════
+// LOGS
+// ══════════════════════════════════════════════
+function renderLogs(){
+  const el=document.getElementById('logs-body'); if(!el) return;
+  const logs=getLogs();
+  if(!logs.length){el.innerHTML='<div class="empty"><div class="empty-i">📋</div>No activity logged yet</div>';return;}
+  el.innerHTML=logs.map(l=>`
+    <div class="log-entry">
+      <div class="le-left">
+        <div class="le-action">${l.action}</div>
+        <div class="le-meta">${l.detail} · ${l.date}</div>
+      </div>
+    </div>`).join('');
+}
+function clearLogs(){
+  if(!confirm('Clear all admin logs?')) return;
+  localStorage.removeItem(DB_LOGS);
+  renderLogs();
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+let toastTmr=null;
+function showToast(title,sub,type='info'){
+  const el=document.getElementById('toast');
+  document.getElementById('toast-t').textContent=title;
+  document.getElementById('toast-s').textContent=sub;
+  el.className='toast show '+type;
+  if(toastTmr) clearTimeout(toastTmr);
+  toastTmr=setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+// ══════════════════════════════════════════════
+// LOGOUT
+// ══════════════════════════════════════════════
+function adminLogout(){
+  localStorage.removeItem(DB_SESSION);
+  localStorage.removeItem('eliteBinaryUser');
+  localStorage.removeItem('eliteBinaryToken');
+  window.location.href='/index.html';
+}
+</script>
+</body>
+</html>
