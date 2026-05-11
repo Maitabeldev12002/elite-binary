@@ -9,29 +9,26 @@ try { require('dotenv').config(); } catch (_) { /* optional */ }
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = process.env.ADMIN_KEY || 'change-this-admin-key';
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-jwt-secret-please';
-const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 const PAYMENT_PROVIDER = (process.env.PAYMENT_PROVIDER || 'payhero').toLowerCase();
 const DEFAULT_MOCK_PAYMENTS = String(process.env.MOCK_PAYMENTS || 'true').toLowerCase() !== 'false';
 const MPESA_ENV = (process.env.MPESA_ENV || 'sandbox').toLowerCase();
 const MPESA_HOST = MPESA_ENV === 'production' ? 'api.safaricom.co.ke' : 'sandbox.safaricom.co.ke';
 const PAYHERO_HOST = process.env.PAYHERO_HOST || 'backend.payhero.co.ke';
 const DEFAULT_DEPOSIT_WALLET = 'I & M Bank Limited 06509279966150 / Channel ID 8005';
-const LEGACY_DEPOSIT_WALLETS = new Set([
-  'NCBA Loop 440200250861 / Channel ID 7598'
-]);
+const LEGACY_DEPOSIT_WALLETS = new Set(['NCBA Loop 440200250861 / Channel ID 7598']);
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
 const SUPABASE_DB_TABLE = process.env.SUPABASE_DB_TABLE || 'app_state';
 const SUPABASE_DB_ID = process.env.SUPABASE_DB_ID || 'elite-binary';
 
-// Database persistence strategy
 const USE_FILE_DB = process.env.USE_FILE_DB !== 'false';
-const DB_DIR = process.env.DB_DIR || '/tmp'; // Use /tmp for AWS Lambda (writable)
+const DB_DIR = process.env.DB_DIR || '/tmp';
 const DB_PATH = path.join(DB_DIR, 'db.json');
 
-// In-memory database (primary for Lambda, fallback for file errors)
 let memoryDb = null;
+const autoTradingSessions = new Map();
 
 const defaultDb = {
   config: {
@@ -47,7 +44,8 @@ const defaultDb = {
   withdrawals: [],
   trades: [],
   ledger: [],
-  otpCodes: []
+  otpCodes: [],
+  autoTradingStates: []
 };
 
 function initializeMemoryDb() {
@@ -79,7 +77,7 @@ function readDbFromFile() {
     if (!db.config.designatedWallet || LEGACY_DEPOSIT_WALLETS.has(db.config.designatedWallet)) {
       db.config.designatedWallet = DEFAULT_DEPOSIT_WALLET;
     }
-    for (const key of ['users', 'deposits', 'withdrawals', 'trades', 'ledger', 'otpCodes']) {
+    for (const key of ['users', 'deposits', 'withdrawals', 'trades', 'ledger', 'otpCodes', 'autoTradingStates']) {
       if (!Array.isArray(db[key])) db[key] = [];
     }
     return db;
@@ -105,7 +103,7 @@ function normalizeDb(db) {
   if (!normalized.config.designatedWallet || LEGACY_DEPOSIT_WALLETS.has(normalized.config.designatedWallet)) {
     normalized.config.designatedWallet = DEFAULT_DEPOSIT_WALLET;
   }
-  for (const key of ['users', 'deposits', 'withdrawals', 'trades', 'ledger', 'otpCodes']) {
+  for (const key of ['users', 'deposits', 'withdrawals', 'trades', 'ledger', 'otpCodes', 'autoTradingStates']) {
     if (!Array.isArray(normalized[key])) normalized[key] = [];
   }
   return normalized;
@@ -117,50 +115,63 @@ function hasSupabaseDb() {
 
 function supabaseRequest(method, requestPath, payload) {
   return new Promise((resolve, reject) => {
-    const endpoint = new URL(SUPABASE_URL);
-    const raw = payload === undefined ? '' : JSON.stringify(payload);
-    const req = https.request({
-      hostname: endpoint.hostname,
-      path: requestPath,
-      method,
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-        ...(raw ? { 'Content-Length': Buffer.byteLength(raw) } : {}),
-        ...(method === 'POST' ? { Prefer: 'resolution=merge-duplicates' } : {})
-      }
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        let parsed = null;
-        try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
-        if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
-        reject(new Error(parsed.message || parsed.error || `Supabase request failed with ${res.statusCode}`));
+    try {
+      const endpoint = new URL(SUPABASE_URL);
+      const raw = payload === undefined ? '' : JSON.stringify(payload);
+      const req = https.request({
+        hostname: endpoint.hostname,
+        path: requestPath,
+        method,
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': 'application/json',
+          ...(raw ? { 'Content-Length': Buffer.byteLength(raw) } : {}),
+          ...(method === 'POST' ? { Prefer: 'resolution=merge-duplicates' } : {})
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          let parsed = null;
+          try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
+          if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
+          reject(new Error(parsed.message || parsed.error || `Supabase request failed with ${res.statusCode}`));
+        });
       });
-    });
-    req.on('error', reject);
-    if (payload !== undefined) req.write(raw);
-    req.end();
+      req.on('error', reject);
+      if (payload !== undefined) req.write(raw);
+      req.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
 async function readDbFromSupabase() {
   if (!hasSupabaseDb()) return null;
-  const path_ = `/rest/v1/${encodeURIComponent(SUPABASE_DB_TABLE)}?id=eq.${encodeURIComponent(SUPABASE_DB_ID)}&select=data&limit=1`;
-  const rows = await supabaseRequest('GET', path_);
-  if (!Array.isArray(rows) || !rows[0]) return null;
-  return rows[0].data;
+  try {
+    const path_ = `/rest/v1/${encodeURIComponent(SUPABASE_DB_TABLE)}?id=eq.${encodeURIComponent(SUPABASE_DB_ID)}&select=data&limit=1`;
+    const rows = await supabaseRequest('GET', path_);
+    if (!Array.isArray(rows) || !rows[0]) return null;
+    return rows[0].data;
+  } catch (e) {
+    console.warn('[DB] Supabase read error:', e.message);
+    return null;
+  }
 }
 
 async function writeDbToSupabase(db) {
   if (!hasSupabaseDb()) return;
-  await supabaseRequest('POST', `/rest/v1/${encodeURIComponent(SUPABASE_DB_TABLE)}?on_conflict=id`, {
-    id: SUPABASE_DB_ID,
-    data: db,
-    updated_at: now()
-  });
+  try {
+    await supabaseRequest('POST', `/rest/v1/${encodeURIComponent(SUPABASE_DB_TABLE)}?on_conflict=id`, {
+      id: SUPABASE_DB_ID,
+      data: db,
+      updated_at: now()
+    });
+  } catch (e) {
+    console.warn('[DB] Supabase write error:', e.message);
+  }
 }
 
 async function readDb() {
@@ -179,7 +190,7 @@ async function readDb() {
   let db = readDbFromFile();
   if (db) {
     db = normalizeDb(db);
-    memoryDb = db; // Keep memory in sync
+    memoryDb = db;
     return db;
   }
   
@@ -218,7 +229,6 @@ function findUserByIdentifier(db, identifier) {
   return db.users.find((u) => String(u.identifier).toLowerCase() === norm) || null;
 }
 
-// ── Password hashing (scrypt, no external deps) ─────────────────────────
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
@@ -230,42 +240,49 @@ function verifyPassword(password, stored) {
   const parts = stored.split('$');
   if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
   const [, salt, expected] = parts;
-  const derived = crypto.scryptSync(String(password || ''), salt, 64).toString('hex');
-  const a = Buffer.from(expected, 'hex');
-  const b = Buffer.from(derived, 'hex');
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
+  try {
+    const derived = crypto.scryptSync(String(password || ''), salt, 64).toString('hex');
+    const a = Buffer.from(expected, 'hex');
+    const b = Buffer.from(derived, 'hex');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch (e) {
+    return false;
+  }
 }
 
-// ── Signed tokens (JWT-style HS256, no external deps) ───────────────────
 function b64url(input) {
-  return Buffer.from(input).toString('base64')
-    .replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return Buffer.from(input).toString('base64').replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
+
 function b64urlDecode(input) {
   const pad = input.length % 4 === 0 ? '' : '='.repeat(4 - (input.length % 4));
   return Buffer.from(input.replace(/-/g, '+').replace(/_/g, '/') + pad, 'base64').toString('utf8');
 }
+
 function signToken(payload) {
   const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const body = b64url(JSON.stringify({ ...payload, iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS }));
-  const sig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64')
-    .replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const sig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64').replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   return `${header}.${body}.${sig}`;
 }
+
 function verifyToken(token) {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const [header, body, sig] = parts;
-  const expected = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64')
-    .replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  if (sig.length !== expected.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
-  let payload;
-  try { payload = JSON.parse(b64urlDecode(body)); } catch (_) { return null; }
-  if (!payload || (payload.exp && payload.exp < Date.now())) return null;
-  return payload;
+  try {
+    const expected = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64').replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    if (sig.length !== expected.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    let payload;
+    try { payload = JSON.parse(b64urlDecode(body)); } catch (_) { return null; }
+    if (!payload || (payload.exp && payload.exp < Date.now())) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
 }
 
 function getBearer(req) {
@@ -291,18 +308,12 @@ function publicUser(user) {
   return rest;
 }
 
-// ── Trade settlement ────────────────────────────────────────────────────
 function settleContract(contractType, params = {}, config = {}) {
   const type = String(contractType || '').toUpperCase();
   const configuredProbability = Number(config.winProbability);
-  const probability = Number.isFinite(configuredProbability)
-    ? Math.min(0.99, Math.max(0.01, configuredProbability))
-    : null;
+  const probability = Number.isFinite(configuredProbability) ? Math.min(0.99, Math.max(0.01, configuredProbability)) : null;
   if (probability !== null) {
-    return {
-      won: Math.random() < probability,
-      outcome: { settlement: 'server_probability', winProbability: probability }
-    };
+    return { won: Math.random() < probability, outcome: { settlement: 'server_probability', winProbability: probability } };
   }
   const digit = crypto.randomInt(0, 10);
   const direction = crypto.randomInt(0, 2) === 1 ? 'up' : 'down';
@@ -346,32 +357,35 @@ function send(res, status, body) {
   res.end(payload);
 }
 
-// ── M-Pesa helpers (unchanged) ──────────────────────────────────────────
 function providerRequest(method, requestPath, payload, token) {
   return new Promise((resolve, reject) => {
-    const raw = payload ? JSON.stringify(payload) : '';
-    const req = https.request({
-      hostname: MPESA_HOST,
-      path: requestPath,
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(raw),
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        let parsed = {};
-        try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
-        if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
-        reject(new Error(parsed.errorMessage || parsed.ResponseDescription || `M-Pesa request failed with ${res.statusCode}`));
+    try {
+      const raw = payload ? JSON.stringify(payload) : '';
+      const req = https.request({
+        hostname: MPESA_HOST,
+        path: requestPath,
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(raw),
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          let parsed = {};
+          try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
+          if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
+          reject(new Error(parsed.errorMessage || parsed.ResponseDescription || `M-Pesa request failed with ${res.statusCode}`));
+        });
       });
-    });
-    req.on('error', reject);
-    if (raw) req.write(raw);
-    req.end();
+      req.on('error', reject);
+      if (raw) req.write(raw);
+      req.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
@@ -384,23 +398,27 @@ async function mpesaToken() {
     return Buffer.from(`${key}:${secret}`).toString('base64');
   })();
   return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: MPESA_HOST,
-      path: '/oauth/v1/generate?grant_type=client_credentials',
-      method: 'GET',
-      headers: { Authorization: `Basic ${auth}` }
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        let parsed = {};
-        try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
-        if (parsed.access_token) return resolve(parsed.access_token);
-        reject(new Error(parsed.errorMessage || 'Unable to get M-Pesa access token'));
+    try {
+      const req = https.request({
+        hostname: MPESA_HOST,
+        path: '/oauth/v1/generate?grant_type=client_credentials',
+        method: 'GET',
+        headers: { Authorization: `Basic ${auth}` }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          let parsed = {};
+          try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
+          if (parsed.access_token) return resolve(parsed.access_token);
+          reject(new Error(parsed.errorMessage || 'Unable to get M-Pesa access token'));
+        });
       });
-    });
-    req.on('error', reject);
-    req.end();
+      req.on('error', reject);
+      req.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
@@ -444,29 +462,33 @@ function payheroRequest(method, requestPath, payload) {
   if (!token) throw new Error('PayHero credentials are not configured');
   const authorization = /^Basic\s+/i.test(token) ? token : `Basic ${token}`;
   return new Promise((resolve, reject) => {
-    const raw = payload ? JSON.stringify(payload) : '';
-    const req = https.request({
-      hostname: PAYHERO_HOST,
-      path: requestPath,
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(raw),
-        Authorization: authorization
-      }
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        let parsed = {};
-        try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
-        if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
-        reject(new Error(parsed.message || parsed.error || `PayHero request failed with ${res.statusCode}`));
+    try {
+      const raw = payload ? JSON.stringify(payload) : '';
+      const req = https.request({
+        hostname: PAYHERO_HOST,
+        path: requestPath,
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(raw),
+          Authorization: authorization
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          let parsed = {};
+          try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
+          if (res.statusCode >= 200 && res.statusCode < 300) return resolve(parsed);
+          reject(new Error(parsed.message || parsed.error || `PayHero request failed with ${res.statusCode}`));
+        });
       });
-    });
-    req.on('error', reject);
-    if (raw) req.write(raw);
-    req.end();
+      req.on('error', reject);
+      if (raw) req.write(raw);
+      req.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
@@ -515,7 +537,6 @@ async function sendB2cPayment({ amount, destination, reference }) {
   }, token);
 }
 
-// ── OTP delivery (logs to console; pluggable for Twilio/Nodemailer) ─────
 async function deliverOtp(identifier, otp) {
   console.log(`[OTP] ${identifier} → ${otp}`);
 }
@@ -547,6 +568,7 @@ function parseBody(req) {
         reject(err);
       }
     });
+    req.on('error', reject);
   });
 }
 
@@ -574,7 +596,6 @@ async function routeApi(req, res) {
   const db = await readDb();
 
   try {
-    // ── Public ────────────────────────────────────────────────────────
     if (req.method === 'GET' && url.pathname === '/api/health') {
       return send(res, 200, { ok: true, time: now() });
     }
@@ -582,7 +603,6 @@ async function routeApi(req, res) {
       return send(res, 200, { config: db.config });
     }
 
-    // ── Auth: register ────────────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/auth/register') {
       const body = await parseBody(req);
       const identifier = String(body.identifier || '').trim();
@@ -624,7 +644,6 @@ async function routeApi(req, res) {
       return send(res, 200, { user: publicUser(user), token });
     }
 
-    // ── Auth: login (password) ────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/auth/login') {
       const body = await parseBody(req);
       const identifier = String(body.identifier || '').trim();
@@ -634,7 +653,6 @@ async function routeApi(req, res) {
 
       let user = findUserByIdentifier(db, identifier);
 
-      // Legacy/demo path: identifier-only login auto-creates a demo account
       if (!user && (body.demo || !password)) {
         user = {
           id: id('usr'),
@@ -673,12 +691,10 @@ async function routeApi(req, res) {
       return send(res, 200, { user: publicUser(user), token });
     }
 
-    // ── Auth: OTP request ─────────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/auth/request-otp') {
       const body = await parseBody(req);
       const identifier = String(body.identifier || '').trim();
       if (!identifier) return send(res, 400, { error: 'Identifier is required' });
-      // Throttle: at most one active OTP per identifier
       db.otpCodes = db.otpCodes.filter((o) =>
         !(String(o.identifier).toLowerCase() === identifier.toLowerCase() && !o.verified && new Date(o.expiresAt) > new Date())
       );
@@ -698,7 +714,6 @@ async function routeApi(req, res) {
       return send(res, 200, { ok: true, expiresAt: record.expiresAt, ...(devEcho ? { devOtp: otp } : {}) });
     }
 
-    // ── Auth: OTP verify ──────────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/auth/verify-otp') {
       const body = await parseBody(req);
       const identifier = String(body.identifier || '').trim();
@@ -718,7 +733,6 @@ async function routeApi(req, res) {
       return send(res, 200, { ok: true, verified: true });
     }
 
-    // ── Auth: reset password (after OTP verify) ───────────────────────
     if (req.method === 'POST' && url.pathname === '/api/auth/reset-password') {
       const body = await parseBody(req);
       const identifier = String(body.identifier || '').trim();
@@ -740,16 +754,13 @@ async function routeApi(req, res) {
       return send(res, 200, { ok: true, user: publicUser(user), token });
     }
 
-    // ── User profile ─────────────────────────────────────────────────
     if (req.method === 'GET' && url.pathname === '/api/user/profile') {
       const user = requireUser(req, res, db);
       if (!user) return;
       return send(res, 200, { user: publicUser(user) });
     }
 
-    // ── Wallet ────────────────────────────────────────────────────────
     if (req.method === 'GET' && url.pathname === '/api/wallet') {
-      // Prefer Bearer auth; fall back to ?userId= for legacy callers
       let user = authenticate(req, db);
       if (!user) {
         const qid = url.searchParams.get('userId');
@@ -762,7 +773,6 @@ async function routeApi(req, res) {
       });
     }
 
-    // ── Deposits ──────────────────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/deposits') {
       const body = await parseBody(req);
       let user = authenticate(req, db);
@@ -789,16 +799,21 @@ async function routeApi(req, res) {
       };
 
       if (!db.config.mockPayments && deposit.method === 'mpesa') {
-        const stk = PAYMENT_PROVIDER === 'mpesa'
-          ? await initiateStkPush({ amount, phone: deposit.phone, accountReference: deposit.id })
-          : await initiatePayheroStkPush({
-              amount,
-              phone: deposit.phone,
-              accountReference: deposit.id,
-              customerName: user.name || user.identifier
-            });
-        deposit.providerReference = stk.CheckoutRequestID || stk.reference || stk.MerchantRequestID || id('stk');
-        deposit.providerResponse = stk;
+        try {
+          const stk = PAYMENT_PROVIDER === 'mpesa'
+            ? await initiateStkPush({ amount, phone: deposit.phone, accountReference: deposit.id })
+            : await initiatePayheroStkPush({
+                amount,
+                phone: deposit.phone,
+                accountReference: deposit.id,
+                customerName: user.name || user.identifier
+              });
+          deposit.providerReference = stk.CheckoutRequestID || stk.reference || stk.MerchantRequestID || id('stk');
+          deposit.providerResponse = stk;
+        } catch (e) {
+          console.error('[STK] Error:', e.message);
+          return send(res, 400, { error: 'Failed to initiate STK push: ' + e.message });
+        }
       } else {
         deposit.providerReference = id('stk');
       }
@@ -886,7 +901,6 @@ async function routeApi(req, res) {
       return send(res, 200, { ok: true });
     }
 
-    // ── Trading ───────────────────────────────────────────────────────
     if (req.method === 'POST' && url.pathname === '/api/trades') {
       const body = await parseBody(req);
       let user = authenticate(req, db);
@@ -945,7 +959,55 @@ async function routeApi(req, res) {
       return send(res, 200, { trades });
     }
 
-    // ── Withdrawals ───────────────────────────────────────────────────
+    if (req.method === 'POST' && url.pathname === '/api/auto-trading/start') {
+      const user = requireUser(req, res, db);
+      if (!user) return;
+      const body = await parseBody(req);
+      const sessionId = user.id + '_' + Date.now();
+      const session = {
+        id: sessionId,
+        userId: user.id,
+        stake: money(body.stake || 10),
+        targetProfit: money(body.targetProfit || 100),
+        stopLoss: money(body.stopLoss || 100),
+        initialBalance: user.balance,
+        currentBalance: user.balance,
+        tradesCount: 0,
+        contractType: body.contractType || 'DIGITEVEN',
+        status: 'running',
+        startedAt: now(),
+        stoppedAt: null
+      };
+      autoTradingSessions.set(sessionId, session);
+      db.autoTradingStates.push(session);
+      await writeDb(db);
+      return send(res, 200, { session });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auto-trading/stop') {
+      const user = requireUser(req, res, db);
+      if (!user) return;
+      const body = await parseBody(req);
+      const sessionId = body.sessionId;
+      const session = autoTradingSessions.get(sessionId);
+      if (!session || session.userId !== user.id) return send(res, 404, { error: 'Session not found' });
+      session.status = 'stopped';
+      session.stoppedAt = now();
+      autoTradingSessions.delete(sessionId);
+      const idx = db.autoTradingStates.findIndex((s) => s.id === sessionId);
+      if (idx >= 0) db.autoTradingStates[idx] = session;
+      await writeDb(db);
+      return send(res, 200, { session });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/auto-trading/status') {
+      const user = requireUser(req, res, db);
+      if (!user) return;
+      const sessions = db.autoTradingStates.filter((s) => s.userId === user.id);
+      const activeSessions = sessions.filter((s) => s.status === 'running');
+      return send(res, 200, { activeSessions, allSessions: sessions });
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/withdrawals') {
       const body = await parseBody(req);
       let user = authenticate(req, db);
@@ -968,10 +1030,16 @@ async function routeApi(req, res) {
         createdAt: now()
       };
       if (!db.config.mockPayments && withdrawal.method.toLowerCase().includes('mpesa')) {
-        const payment = await sendB2cPayment({ amount, destination: withdrawal.destination, reference: withdrawal.id });
-        withdrawal.status = 'processing';
-        withdrawal.providerReference = payment.OriginatorConversationID || withdrawal.id;
-        withdrawal.providerResponse = payment;
+        try {
+          const payment = await sendB2cPayment({ amount, destination: withdrawal.destination, reference: withdrawal.id });
+          withdrawal.status = 'processing';
+          withdrawal.providerReference = payment.OriginatorConversationID || withdrawal.id;
+          withdrawal.providerResponse = payment;
+        } catch (e) {
+          console.error('[B2C] Error:', e.message);
+          user.balance = money(user.balance + amount);
+          return send(res, 400, { error: 'Failed to process withdrawal: ' + e.message });
+        }
       }
       db.withdrawals.push(withdrawal);
       ledger(db, {
@@ -1012,7 +1080,6 @@ async function routeApi(req, res) {
       return send(res, 200, { ok: true });
     }
 
-    // ── Admin ─────────────────────────────────────────────────────────
     if (req.method === 'GET' && url.pathname === '/api/admin/summary') {
       if (!requireAdmin(req, res)) return;
       return send(res, 200, {
@@ -1146,12 +1213,26 @@ const server = http.createServer((req, res) => {
   return serveFile(res, filePath, type);
 });
 
-// Initialize in-memory database on startup
 initializeMemoryDb();
 
 server.listen(PORT, () => {
-  console.log(`Elite Binary backend running at http://localhost:${PORT}`);
-  console.log(`Admin key: ${ADMIN_KEY}`);
-  console.log(`Database mode: ${hasSupabaseDb() ? 'Supabase Postgres' : USE_FILE_DB ? 'File (with memory fallback)' : 'Memory only'}`);
-  console.log(`DB Path: ${hasSupabaseDb() ? `${SUPABASE_DB_TABLE}/${SUPABASE_DB_ID}` : DB_PATH}`);
+  console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
+  console.log(`║          ELITE BINARY - PRODUCTION SERVER STARTED             ║`);
+  console.log(`╠════════════════════════════════════════════════════════════════╣`);
+  console.log(`║ 🚀 Server running at http://localhost:${PORT}`);
+  console.log(`║ 🔐 Admin key configured: ${ADMIN_KEY === 'change-this-admin-key' ? '❌ CHANGE ME!' : '✅'}`);
+  console.log(`║ 💾 Database mode: ${hasSupabaseDb() ? 'Supabase Postgres' : USE_FILE_DB ? 'File (with memory fallback)' : 'Memory only'}`);
+  console.log(`║ 💳 Payment provider: ${PAYMENT_PROVIDER}`);
+  console.log(`║ 🤖 Auto-trading: ENABLED`);
+  console.log(`║ 📊 Mock payments: ${DEFAULT_MOCK_PAYMENTS ? '✅ ON (testing)' : '❌ OFF (live)'}`);
+  console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
 });
